@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout – Janelle Luxury Hairs</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/account.css" />
+  <link rel="stylesheet" href="css/checkout.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body class="account-page">
+  <header class="acc-header">
+    <div class="acc-header-inner">
+      <a href="index.html" class="acc-logo"><span>Janelle</span><small>Luxury Hairs</small></a>
+      <a href="index.html" class="acc-logout-btn"><i class="bi bi-arrow-left"></i> Back to Store</a>
+    </div>
+  </header>
+  <main class="checkout-main">
+    <h1 class="checkout-title">🧾 Checkout</h1>
+    <div id="checkout-empty" class="checkout-empty" style="display:none">
+      <p>Your cart is empty.</p>
+      <a href="index.html#shop" class="acc-submit-btn">Continue Shopping</a>
+    </div>
+    <div id="checkout-body" class="checkout-grid">
+      <div class="checkout-left-col">
+        <section class="checkout-form-panel">
+          <h2>📍 Step 1 — Delivery Details</h2>
+          <div id="checkout-error" class="checkout-error" style="display:none"></div>
+          <form id="checkout-form" class="acc-form">
+            <div class="acc-form-group">
+              <label>Full Name</label>
+              <input type="text" id="co-name" placeholder="Your full name" required />
+            </div>
+            <div class="acc-form-group">
+              <label>Email Address</label>
+              <input type="email" id="co-email" placeholder="your@email.com" required />
+            </div>
+            <div class="acc-form-group">
+              <label>Phone Number</label>
+              <input type="tel" id="co-phone" placeholder="e.g. 0810 779 6481" required />
+            </div>
+            <div class="acc-form-group">
+              <label>How would you like to get your order?</label>
+              <div class="delivery-method-toggle">
+                <label class="delivery-method-option">
+                  <input type="radio" name="delivery-method" value="delivery" id="co-method-delivery" checked />
+                  <span>🚚 Delivery</span>
+                </label>
+                <label class="delivery-method-option">
+                  <input type="radio" name="delivery-method" value="pickup" id="co-method-pickup" />
+                  <span>🛍️ Self-Pickup (Lagos)</span>
+                </label>
+              </div>
+            </div>
+            <div id="delivery-address-fields">
+              <div class="acc-form-group">
+                <label>Delivery Address</label>
+                <input type="text" id="co-address" placeholder="Street address" />
+              </div>
+              <div class="checkout-form-row">
+                <div class="acc-form-group">
+                  <label>City</label>
+                  <input type="text" id="co-city" placeholder="City" />
+                </div>
+                <div class="acc-form-group">
+                  <label>State</label>
+                  <input type="text" id="co-state" placeholder="State" />
+                </div>
+              </div>
+            </div>
+            <div id="pickup-note" class="pickup-note" style="display:none">
+              📍 Ready for pickup within 24 hours. We will send the pickup address to your phone/WhatsApp once your order is confirmed.
+            </div>
+            <div class="acc-form-group">
+              <label>Delivery Notes (optional)</label>
+              <textarea id="co-notes" rows="3" placeholder="e.g. Landmark, preferred delivery time..."></textarea>
+            </div>
+          </form>
+        </section>
+        <section class="checkout-form-panel checkout-payment-panel">
+          <h2>💳 Step 2 — Make Payment</h2>
+          <p class="checkout-payment-intro">Transfer the exact order total to the account below, then upload your payment receipt.</p>
+          <div class="checkout-bank-details">
+            <div class="bank-detail-row">
+              <span class="bank-label">Bank</span>
+              <span class="bank-value">OPay</span>
+            </div>
+            <div class="bank-detail-row">
+              <span class="bank-label">Account Number</span>
+              <span class="bank-value">9060264597 <button type="button" class="copy-btn" id="copy-acct-btn">📋 Copy</button></span>
+            </div>
+            <div class="bank-detail-row">
+              <span class="bank-label">Account Name</span>
+              <span class="bank-value">Kelvin Idabor</span>
+            </div>
+            <div class="bank-detail-row">
+              <span class="bank-label">Amount to Pay</span>
+              <span class="bank-value checkout-pay-amount" id="pay-amount">₦0</span>
+            </div>
+          </div>
+          <div class="checkout-proof-upload">
+            <label class="checkout-proof-label">📎 Upload Payment Receipt</label>
+            <p class="checkout-proof-hint">Screenshot your transfer confirmation and upload it here.</p>
+            <input type="file" id="proof-input" accept="image/*" style="display:none" />
+            <button type="button" class="checkout-proof-btn" id="proof-upload-btn">
+              <i class="bi bi-upload"></i> Choose Receipt Image
+            </button>
+            <div id="proof-preview-wrap" style="display:none">
+              <img id="proof-preview" src="" alt="Payment receipt" class="checkout-proof-preview" />
+              <button type="button" class="checkout-proof-remove" id="proof-remove-btn">✕ Remove</button>
+            </div>
+            <p id="proof-filename" class="checkout-proof-filename"></p>
+          </div>
+          <button type="button" id="checkout-submit-btn" class="acc-submit-btn checkout-submit-btn">
+            ✅ Place Order & Submit Proof
+          </button>
+        </section>
+      </div>
+      <section class="checkout-summary-panel">
+        <h2>🛍️ Order Summary</h2>
+        <div id="checkout-items" class="checkout-items"></div>
+        <div class="checkout-summary-row"><span>Subtotal</span><span id="checkout-subtotal">₦0</span></div>
+        <div class="checkout-summary-row"><span>Delivery</span><span>Calculated on confirmation</span></div>
+        <div class="checkout-summary-row checkout-summary-total"><span>Total</span><span id="checkout-total">₦0</span></div>
+        <div class="checkout-whatsapp-note">
+          <i class="bi bi-whatsapp"></i>
+          Need help? <a href="https://wa.me/2348107796481" target="_blank">Chat us on WhatsApp</a>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script src="js/checkout.js"></script>
+</body>
+</html>

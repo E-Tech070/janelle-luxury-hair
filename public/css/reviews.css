@@ -1,0 +1,110 @@
+/* ============================================================
+   REVIEW RATING BADGES + MODAL
+   ============================================================ */
+
+.review-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  margin: 2px 0 4px;
+  font-size: 0.78rem;
+}
+.review-stars { color: #c9a84c; letter-spacing: 1px; }
+.review-count { color: #888; font-size: 0.72rem; }
+.review-rating-badge:hover .review-count { color: #c9a84c; text-decoration: underline; }
+
+.review-rating-badge-large {
+  font-size: 0.95rem;
+  margin: 8px 0 16px;
+  cursor: pointer;
+}
+.review-rating-badge-large .review-stars { font-size: 1.1rem; }
+
+.reviews-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s ease;
+}
+.reviews-modal.open { opacity: 1; visibility: visible; }
+
+.reviews-modal-box {
+  background: #161616;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  width: 460px;
+  max-width: 92vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.reviews-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #2a2a2a;
+}
+.reviews-modal-header h3 {
+  font-family: "Playfair Display", serif;
+  font-size: 1.05rem;
+  color: #fff;
+  margin: 0;
+  padding-right: 1rem;
+}
+#reviews-modal-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+#reviews-modal-close:hover { color: #fff; }
+
+.reviews-modal-list {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+}
+
+.reviews-loading,
+.reviews-empty {
+  text-align: center;
+  color: #555;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  padding: 2rem 0;
+}
+
+.review-card {
+  border-bottom: 1px solid #222;
+  padding: 1rem 0;
+}
+.review-card:last-child { border-bottom: none; }
+.review-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.review-card-stars { color: #c9a84c; letter-spacing: 1px; }
+.review-card-name { color: #999; font-size: 0.8rem; }
+.review-card-photo {
+  max-width: 160px;
+  border-radius: 8px;
+  margin: 6px 0;
+  display: block;
+}
+.review-card-comment {
+  color: #ccc;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}

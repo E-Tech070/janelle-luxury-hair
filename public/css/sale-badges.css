@@ -1,0 +1,24 @@
+/* ============================================================
+   SALE BADGES — old price strikethrough + "Save X%" tag
+   Injected next to .product-price by js/sale-badges.js
+   ============================================================ */
+
+.sale-old-price {
+  color: #666;
+  text-decoration: line-through;
+  font-size: 0.78rem;
+  margin-right: 6px;
+}
+
+.sale-save-badge {
+  display: inline-block;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 2px 7px;
+  border-radius: 100px;
+  margin-left: 8px;
+  vertical-align: middle;
+}

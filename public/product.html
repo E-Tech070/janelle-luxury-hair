@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Product – Janelle Luxury Hairs</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="stylesheet" href="css/product.css"/>
+  <link rel="stylesheet" href="css/cart.css"/>
+  <link rel="stylesheet" href="css/reviews.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+</head>
+<body class="product-page">
+
+  <header class="header" id="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo-link">
+        <div class="logo-text">
+          <span class="logo-main">Janelle</span>
+          <span class="logo-sub">Luxury Hairs & Accessories</span>
+        </div>
+      </a>
+      <nav class="nav" id="nav">
+        <ul class="nav-list">
+          <li><a href="index.html#home" class="nav-link">Home</a></li>
+          <li><a href="index.html#shop" class="nav-link">Shop</a></li>
+          <li><a href="index.html#services" class="nav-link">Services</a></li>
+          <li><a href="index.html#products" class="nav-link">Collections</a></li>
+          <li><a href="index.html#gallery" class="nav-link">Gallery</a></li>
+          <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <a href="login.html" class="account-header-btn" id="account-header-link"><i class="bi bi-person-circle"></i></a>
+        <a href="#" class="cart-header-btn" id="cart-header-link" aria-label="Cart">
+          <i class="bi bi-bag"></i>
+          <span id="cart-badge" class="cart-badge">0</span>
+        </a>
+        <a href="https://wa.me/2348107796481" target="_blank" rel="noopener" class="whatsapp-btn" aria-label="WhatsApp">
+          <i class="bi bi-whatsapp"></i>
+        </a>
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="product-main">
+    <div class="product-breadcrumb">
+      <a href="index.html">Home</a> <span>›</span>
+      <a href="index.html#shop">Shop</a> <span>›</span>
+      <span id="breadcrumb-name">Product</span>
+    </div>
+
+    <div class="product-container">
+      <div class="product-gallery">
+        <div class="product-img-main">
+          <img id="product-img" src="" alt="Product Image"/>
+          <span id="product-badge-display" class="product-page-badge" style="display:none"></span>
+        </div>
+      </div>
+
+      <div class="product-details">
+        <span id="product-category-display" class="product-page-category"></span>
+        <h1 id="product-name-display" class="product-page-title"></h1>
+
+        <div class="product-page-pricing">
+          <span id="product-old-price" class="product-page-old-price" style="display:none"></span>
+          <span id="product-price-display" class="product-page-price"></span>
+        </div>
+
+        <div class="product-page-divider"></div>
+
+        <div id="product-specs" class="product-specs"></div>
+
+        <div class="product-page-divider"></div>
+
+        <p id="product-desc-display" class="product-page-desc"></p>
+
+        <div class="product-page-actions">
+          <div class="product-qty-wrap">
+            <button class="product-qty-btn" id="qty-minus">−</button>
+            <span class="product-qty-num" id="qty-num">1</span>
+            <button class="product-qty-btn" id="qty-plus">+</button>
+          </div>
+          <button class="product-add-btn" id="add-to-cart-btn">
+            <i class="bi bi-bag-plus"></i> Add to Cart
+          </button>
+        </div>
+
+        <div id="add-success" class="product-add-success" style="display:none">
+          ✅ Added to cart! <a href="index.html">Continue shopping</a> or <a href="checkout.html">checkout</a>
+        </div>
+
+        <div class="product-page-divider"></div>
+
+        <div class="product-guarantees">
+          <div class="guarantee-item">
+            <span>🚚</span>
+            <div>
+              <strong>Fast Delivery</strong>
+              <p>Lagos same-day · Nationwide 2-3 days</p>
+            </div>
+          </div>
+          <div class="guarantee-item">
+            <span>💬</span>
+            <div>
+              <strong>WhatsApp Support</strong>
+              <p>Chat with us for custom orders</p>
+            </div>
+          </div>
+          <div class="guarantee-item">
+            <span>✦</span>
+            <div>
+              <strong>100% Human Hair</strong>
+              <p>Verified authentic, no synthetic blends</p>
+            </div>
+          </div>
+        </div>
+
+        <a id="whatsapp-order-btn" href="#" target="_blank" class="product-wa-btn">
+          <i class="bi bi-whatsapp"></i> Order via WhatsApp instead
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="footer-logo-text">Janelle</span>
+        <span class="footer-tagline">Luxury Hairs & Accessories</span>
+      </div>
+      <div class="footer-links">
+        <a href="index.html#home">Home</a>
+        <a href="index.html#shop">Shop</a>
+        <a href="index.html#contact">Contact</a>
+      </div>
+      <p class="footer-copy">&copy; 2026 Janelle Luxury Hairs & Accessories. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/headerauth.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/products-data.js"></script>
+  <script src="js/product.js"></script>
+  <script src="js/reviews.js"></script>
+</body>
+</html>
