@@ -6,7 +6,7 @@
 // the individual reviews, including any customer photos.
 // ============================================================
 
-var REVIEWS_API = "http://localhost:5000/api/reviews";
+var REVIEWS_API = "/api/reviews";
 
 // Escapes text before it goes into innerHTML. This one matters
 // most of all — this file shows review text to EVERY visitor of

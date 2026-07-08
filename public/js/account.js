@@ -1,4 +1,4 @@
-var API = "http://localhost:5000/api";
+var API = "/api";
 var token = localStorage.getItem("janelle_token");
 var user = JSON.parse(localStorage.getItem("janelle_user") || "null");
 

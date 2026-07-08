@@ -1,4 +1,4 @@
-var API = "http://localhost:5000/api";
+var API = "/api";
 
 function showError(msg) {
   var el = document.getElementById("auth-error");
