@@ -1010,3 +1010,25 @@ body.admin-page {
   border-color: #c9a84c;
   color: #c9a84c;
 }
+/* MOBILE FIX: header row overflowed off-screen on small widths,
+   which caused the shifted/cut-off layout on the whole admin page */
+@media (max-width: 768px) {
+  .admin-header {
+    padding: 0.75rem 1rem;
+  }
+  .admin-header-inner {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+}
+/* MOBILE FIX: header row overflowed off-screen on small widths,
+   which caused the shifted/cut-off layout on the whole admin page */
+@media (max-width: 768px) {
+  .admin-header {
+    padding: 0.75rem 1rem;
+  }
+  .admin-header-inner {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+}

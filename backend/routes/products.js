@@ -105,11 +105,9 @@ router.post("/", authMiddleware, adminOnly, async function (req, res) {
       !body.numericPrice ||
       !body.img
     ) {
-      return res
-        .status(400)
-        .json({
-          message: "id, name, category, numericPrice and img are required",
-        });
+      return res.status(400).json({
+        message: "id, name, category, numericPrice and img are required",
+      });
     }
     var existing = await Product.findOne({ id: body.id });
     if (existing)
