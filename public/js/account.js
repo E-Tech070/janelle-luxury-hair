@@ -16,43 +16,70 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-if (!token || !user) { window.location.href = "login.html"; }
-else {
+if (!token || !user) {
+  window.location.href = "login.html";
+} else {
   document.getElementById("acc-name").textContent = user.name;
   document.getElementById("acc-email").textContent = user.email;
 }
 
-document.getElementById("logout-btn").addEventListener("click", function() {
+document.getElementById("logout-btn").addEventListener("click", function () {
   localStorage.removeItem("janelle_token");
   localStorage.removeItem("janelle_user");
   window.location.href = "index.html";
 });
 
-document.querySelectorAll(".acc-nav-btn").forEach(function(btn) {
-  btn.addEventListener("click", function() {
-    document.querySelectorAll(".acc-nav-btn").forEach(function(b) { b.classList.remove("active"); });
-    document.querySelectorAll(".acc-tab").forEach(function(t) { t.classList.remove("active"); });
+document.querySelectorAll(".acc-nav-btn").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    document.querySelectorAll(".acc-nav-btn").forEach(function (b) {
+      b.classList.remove("active");
+    });
+    document.querySelectorAll(".acc-tab").forEach(function (t) {
+      t.classList.remove("active");
+    });
     btn.classList.add("active");
     document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
   });
 });
 
 function formatDate(d) {
-  return new Date(d).toLocaleDateString("en-NG", { day:"numeric", month:"short", year:"numeric" });
+  return new Date(d).toLocaleDateString("en-NG", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function statusSteps(status) {
-  var steps = ["pending","confirmed","processing","shipped","delivered"];
+  var steps = ["pending", "confirmed", "processing", "shipped", "delivered"];
   var current = steps.indexOf(status);
   if (status === "cancelled") {
     return '<div class="track-cancelled">Order Cancelled</div>';
   }
   var html = '<div class="track-bar">';
-  steps.forEach(function(step, i) {
-    var cls = i < current ? "track-step done" : i === current ? "track-step active" : "track-step";
-    var labels = { pending:"Pending", confirmed:"Confirmed", processing:"Processing", shipped:"Shipped", delivered:"Delivered" };
-    html += '<div class="' + cls + '"><div class="track-dot"></div><div class="track-label">' + labels[step] + '</div></div>';
-    if (i < steps.length - 1) html += '<div class="track-line' + (i < current ? " done" : "") + '"></div>';
+  steps.forEach(function (step, i) {
+    var cls =
+      i < current
+        ? "track-step done"
+        : i === current
+          ? "track-step active"
+          : "track-step";
+    var labels = {
+      pending: "Pending",
+      confirmed: "Confirmed",
+      processing: "Processing",
+      shipped: "Shipped",
+      delivered: "Delivered",
+    };
+    html +=
+      '<div class="' +
+      cls +
+      '"><div class="track-dot"></div><div class="track-label">' +
+      labels[step] +
+      "</div></div>";
+    if (i < steps.length - 1)
+      html +=
+        '<div class="track-line' + (i < current ? " done" : "") + '"></div>';
   });
   html += "</div>";
   return html;
@@ -67,84 +94,25 @@ function paymentProofHtml(o) {
   if (o.paymentStatus === "confirmed") {
     return '<div class="acc-payment-block confirmed">✅ Payment Confirmed</div>';
   }
-  if (o.paymentStatus === "pending_review") {
+  if (o.paymentStatus === "proof_submitted") {
     return (
       '<div class="acc-payment-block pending-review">' +
-        '<div class="acc-payment-label">🧾 Payment proof submitted — awaiting confirmation</div>' +
-        (o.paymentProof ? '<img class="acc-payment-thumb" src="' + o.paymentProof + '" alt="Payment proof" />' : "") +
-      '</div>'
+      '<div class="acc-payment-label">🧾 Payment proof submitted — awaiting confirmation</div>' +
+      (o.paymentProof
+        ? '<img class="acc-payment-thumb" src="' +
+          o.paymentProof +
+          '" alt="Payment proof" />'
+        : "") +
+      "</div>"
     );
   }
-  // awaiting_proof — show the upload form
-  var safeId = String(o._id).replace(/[^a-zA-Z0-9]/g, "");
-  return (
-    '<div class="acc-payment-block awaiting">' +
-      '<div class="acc-payment-label">💳 Please upload proof of payment (screenshot of your bank transfer)</div>' +
-      '<input type="file" class="acc-payment-photo-input" data-order="' + o._id + '" accept="image/*" />' +
-      '<div class="acc-payment-photo-preview" style="display:none"></div>' +
-      '<div class="acc-payment-error" id="payment-error-' + safeId + '" style="display:none"></div>' +
-      '<button class="acc-payment-submit-btn" data-order="' + o._id + '" disabled>Submit Payment Proof</button>' +
-    '</div>'
-  );
+  // Legacy orders placed before proof was required at checkout.
+  // No upload form here anymore — proof is now mandatory at checkout time.
+  return '<div class="acc-payment-block awaiting">⚠️ No payment proof on file for this order. Please contact us.</div>';
 }
 
 function wirePaymentProofForms() {
-  document.querySelectorAll(".acc-payment-photo-input").forEach(function(input) {
-    input.addEventListener("change", function() {
-      var file = input.files[0];
-      var block = input.closest(".acc-payment-block");
-      var preview = block.querySelector(".acc-payment-photo-preview");
-      var submitBtn = block.querySelector(".acc-payment-submit-btn");
-      if (!file) { preview.style.display = "none"; submitBtn.disabled = true; return; }
-      resizePhotoFile(file, function(dataUrl) {
-        input.dataset.photo = dataUrl;
-        preview.innerHTML = '<img src="' + dataUrl + '" alt="Preview" />';
-        preview.style.display = "block";
-        submitBtn.disabled = false;
-      });
-    });
-  });
-
-  document.querySelectorAll(".acc-payment-submit-btn").forEach(function(btn) {
-    btn.addEventListener("click", async function() {
-      var orderId = btn.dataset.order;
-      var block = btn.closest(".acc-payment-block");
-      var input = block.querySelector(".acc-payment-photo-input");
-      var errorEl = document.getElementById("payment-error-" + orderId.replace(/[^a-zA-Z0-9]/g, ""));
-      var photo = input.dataset.photo;
-
-      if (!photo) {
-        errorEl.textContent = "Please choose a screenshot first.";
-        errorEl.style.display = "block";
-        return;
-      }
-
-      btn.disabled = true;
-      btn.textContent = "Uploading...";
-
-      try {
-        var res = await fetch(API + "/orders/" + orderId + "/payment-proof", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
-          body: JSON.stringify({ photo: photo })
-        });
-        var data = await res.json();
-        if (res.ok) {
-          loadOrders();
-        } else {
-          errorEl.textContent = data.message || "Could not upload payment proof.";
-          errorEl.style.display = "block";
-          btn.disabled = false;
-          btn.textContent = "Submit Payment Proof";
-        }
-      } catch(err) {
-        errorEl.textContent = "Connection error. Please try again.";
-        errorEl.style.display = "block";
-        btn.disabled = false;
-        btn.textContent = "Submit Payment Proof";
-      }
-    });
-  });
+  // No-op: payment proof is collected during checkout now, nothing to wire up here.
 }
 
 var myReviewedItems = []; // filled by loadMyReviews(), list of "orderId::productName"
@@ -155,10 +123,14 @@ function reviewKey(orderId, productName) {
 
 async function loadMyReviews() {
   try {
-    var res = await fetch(API + "/reviews/my", { headers: { "Authorization": "Bearer " + token } });
+    var res = await fetch(API + "/reviews/my", {
+      headers: { Authorization: "Bearer " + token },
+    });
     var reviews = await res.json();
-    myReviewedItems = reviews.map(function(r) { return reviewKey(r.order, r.productName); });
-  } catch(err) {
+    myReviewedItems = reviews.map(function (r) {
+      return reviewKey(r.order, r.productName);
+    });
+  } catch (err) {
     myReviewedItems = [];
   }
 }
@@ -168,9 +140,9 @@ async function loadMyReviews() {
 // wide at moderate JPEG quality — plenty sharp for a review photo.
 function resizePhotoFile(file, callback) {
   var reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     var img = new Image();
-    img.onload = function() {
+    img.onload = function () {
       var maxWidth = 700;
       var scale = Math.min(1, maxWidth / img.width);
       var canvas = document.createElement("canvas");
@@ -193,65 +165,82 @@ function reviewFormHtml(orderId, productName) {
   var safeId = (orderId + "-" + productName).replace(/[^a-zA-Z0-9]/g, "");
   var safeName = escapeHtml(productName);
   return (
-    '<button class="acc-review-toggle-btn" data-form="review-form-' + safeId + '">⭐ Leave a Review</button>' +
-    '<div class="acc-review-form" id="review-form-' + safeId + '" style="display:none">' +
-      '<div class="acc-star-picker" data-order="' + orderId + '" data-product="' + safeName + '">' +
-        '<span class="acc-star" data-value="1">☆</span>' +
-        '<span class="acc-star" data-value="2">☆</span>' +
-        '<span class="acc-star" data-value="3">☆</span>' +
-        '<span class="acc-star" data-value="4">☆</span>' +
-        '<span class="acc-star" data-value="5">☆</span>' +
-      '</div>' +
-      '<textarea class="acc-review-comment" rows="3" placeholder="How was it? What did you love?"></textarea>' +
-      '<input type="file" class="acc-review-photo" accept="image/*" />' +
-      '<div class="acc-review-photo-preview" style="display:none"></div>' +
-      '<div class="acc-review-error" style="display:none"></div>' +
-      '<button class="acc-review-submit-btn" data-order="' + orderId + '" data-product="' + safeName + '">Submit Review</button>' +
-    '</div>'
+    '<button class="acc-review-toggle-btn" data-form="review-form-' +
+    safeId +
+    '">⭐ Leave a Review</button>' +
+    '<div class="acc-review-form" id="review-form-' +
+    safeId +
+    '" style="display:none">' +
+    '<div class="acc-star-picker" data-order="' +
+    orderId +
+    '" data-product="' +
+    safeName +
+    '">' +
+    '<span class="acc-star" data-value="1">☆</span>' +
+    '<span class="acc-star" data-value="2">☆</span>' +
+    '<span class="acc-star" data-value="3">☆</span>' +
+    '<span class="acc-star" data-value="4">☆</span>' +
+    '<span class="acc-star" data-value="5">☆</span>' +
+    "</div>" +
+    '<textarea class="acc-review-comment" rows="3" placeholder="How was it? What did you love?"></textarea>' +
+    '<input type="file" class="acc-review-photo" accept="image/*" />' +
+    '<div class="acc-review-photo-preview" style="display:none"></div>' +
+    '<div class="acc-review-error" style="display:none"></div>' +
+    '<button class="acc-review-submit-btn" data-order="' +
+    orderId +
+    '" data-product="' +
+    safeName +
+    '">Submit Review</button>' +
+    "</div>"
   );
 }
 
 function wireReviewForms() {
-  document.querySelectorAll(".acc-review-toggle-btn").forEach(function(btn) {
-    btn.addEventListener("click", function() {
+  document.querySelectorAll(".acc-review-toggle-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
       var form = document.getElementById(btn.dataset.form);
       var isOpen = form.style.display === "block";
       form.style.display = isOpen ? "none" : "block";
     });
   });
 
-  document.querySelectorAll(".acc-star-picker").forEach(function(picker) {
+  document.querySelectorAll(".acc-star-picker").forEach(function (picker) {
     var stars = picker.querySelectorAll(".acc-star");
 
     function paintStars(uptoValue) {
-      stars.forEach(function(s) {
+      stars.forEach(function (s) {
         var isFilled = parseInt(s.dataset.value) <= uptoValue;
         s.classList.toggle("filled", isFilled);
         s.textContent = isFilled ? "★" : "☆";
       });
     }
 
-    stars.forEach(function(star) {
-      star.addEventListener("click", function() {
+    stars.forEach(function (star) {
+      star.addEventListener("click", function () {
         picker.dataset.rating = star.dataset.value;
         paintStars(parseInt(star.dataset.value));
       });
-      star.addEventListener("mouseenter", function() {
+      star.addEventListener("mouseenter", function () {
         paintStars(parseInt(star.dataset.value));
       });
     });
 
-    picker.addEventListener("mouseleave", function() {
+    picker.addEventListener("mouseleave", function () {
       paintStars(parseInt(picker.dataset.rating || "0"));
     });
   });
 
-  document.querySelectorAll(".acc-review-photo").forEach(function(input) {
-    input.addEventListener("change", function() {
+  document.querySelectorAll(".acc-review-photo").forEach(function (input) {
+    input.addEventListener("change", function () {
       var file = input.files[0];
-      var preview = input.parentElement.querySelector(".acc-review-photo-preview");
-      if (!file) { preview.style.display = "none"; return; }
-      resizePhotoFile(file, function(dataUrl) {
+      var preview = input.parentElement.querySelector(
+        ".acc-review-photo-preview",
+      );
+      if (!file) {
+        preview.style.display = "none";
+        return;
+      }
+      resizePhotoFile(file, function (dataUrl) {
         input.dataset.photo = dataUrl;
         preview.innerHTML = '<img src="' + dataUrl + '" alt="Preview" />';
         preview.style.display = "block";
@@ -259,8 +248,8 @@ function wireReviewForms() {
     });
   });
 
-  document.querySelectorAll(".acc-review-submit-btn").forEach(function(btn) {
-    btn.addEventListener("click", async function() {
+  document.querySelectorAll(".acc-review-submit-btn").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
       var formWrap = btn.closest(".acc-review-form");
       var picker = formWrap.querySelector(".acc-star-picker");
       var comment = formWrap.querySelector(".acc-review-comment").value.trim();
@@ -268,8 +257,16 @@ function wireReviewForms() {
       var errorEl = formWrap.querySelector(".acc-review-error");
       var rating = parseInt(picker.dataset.rating || "0");
 
-      if (!rating) { errorEl.textContent = "Please pick a star rating."; errorEl.style.display = "block"; return; }
-      if (!comment) { errorEl.textContent = "Please write a short comment."; errorEl.style.display = "block"; return; }
+      if (!rating) {
+        errorEl.textContent = "Please pick a star rating.";
+        errorEl.style.display = "block";
+        return;
+      }
+      if (!comment) {
+        errorEl.textContent = "Please write a short comment.";
+        errorEl.style.display = "block";
+        return;
+      }
 
       btn.disabled = true;
       btn.textContent = "Submitting...";
@@ -277,25 +274,29 @@ function wireReviewForms() {
       try {
         var res = await fetch(API + "/reviews", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token,
+          },
           body: JSON.stringify({
             orderId: btn.dataset.order,
             productName: btn.dataset.product,
             rating: rating,
             comment: comment,
-            photo: photoInput.dataset.photo || undefined
-          })
+            photo: photoInput.dataset.photo || undefined,
+          }),
         });
         var data = await res.json();
         if (res.ok) {
-          formWrap.innerHTML = '<div class="acc-reviewed-tag">✅ Thanks! Your review is awaiting approval.</div>';
+          formWrap.innerHTML =
+            '<div class="acc-reviewed-tag">✅ Thanks! Your review is awaiting approval.</div>';
         } else {
           errorEl.textContent = data.message || "Could not submit review.";
           errorEl.style.display = "block";
           btn.disabled = false;
           btn.textContent = "Submit Review";
         }
-      } catch(err) {
+      } catch (err) {
         errorEl.textContent = "Connection error. Please try again.";
         errorEl.style.display = "block";
         btn.disabled = false;
@@ -309,42 +310,76 @@ async function loadOrders() {
   var el = document.getElementById("orders-list");
   try {
     await loadMyReviews();
-    var res = await fetch(API + "/orders/my", { headers: { "Authorization": "Bearer " + token } });
+    var res = await fetch(API + "/orders/my", {
+      headers: { Authorization: "Bearer " + token },
+    });
     var orders = await res.json();
     if (!orders.length) {
-      el.innerHTML = '<p class="acc-empty">You have no orders yet. Start shopping!</p>';
+      el.innerHTML =
+        '<p class="acc-empty">You have no orders yet. Start shopping!</p>';
       return;
     }
     var html = "";
-    orders.forEach(function(o) {
+    orders.forEach(function (o) {
       var items = "";
-      o.items.forEach(function(i) {
-        items += '<div class="acc-order-item">' + escapeHtml(i.name) + " x" + i.qty + " — " + escapeHtml(i.price) + "</div>";
+      o.items.forEach(function (i) {
+        items +=
+          '<div class="acc-order-item">' +
+          escapeHtml(i.name) +
+          " x" +
+          i.qty +
+          " — " +
+          escapeHtml(i.price) +
+          "</div>";
         if (o.status === "delivered") {
           items += reviewFormHtml(o._id, i.name);
         }
       });
       html += '<div class="acc-order-card">';
       html += '<div class="acc-order-header">';
-      html += '<div><div class="acc-order-id">ORDER #' + o._id.slice(-6).toUpperCase() + "</div>";
-      html += '<div class="acc-order-date">' + formatDate(o.createdAt) + "</div></div>";
-      html += '<span class="acc-status ' + o.status + '">' + o.status.toUpperCase() + "</span>";
+      html +=
+        '<div><div class="acc-order-id">ORDER #' +
+        o._id.slice(-6).toUpperCase() +
+        "</div>";
+      html +=
+        '<div class="acc-order-date">' +
+        formatDate(o.createdAt) +
+        "</div></div>";
+      html +=
+        '<span class="acc-status ' +
+        o.status +
+        '">' +
+        o.status.toUpperCase() +
+        "</span>";
       html += "</div>";
       html += statusSteps(o.status);
       html += paymentProofHtml(o);
-      html += '<div class="acc-order-items" style="margin-top:1rem">' + items + "</div>";
+      html +=
+        '<div class="acc-order-items" style="margin-top:1rem">' +
+        items +
+        "</div>";
       if (o.deliveryMethod === "pickup") {
         html += '<div class="acc-order-items">🛍️ Self-Pickup (Lagos)</div>';
       } else if (o.shippingAddress && o.shippingAddress.address) {
-        html += '<div class="acc-order-items">📍 ' + escapeHtml(o.shippingAddress.address) + ", " + escapeHtml(o.shippingAddress.city) + ", " + escapeHtml(o.shippingAddress.state) + "</div>";
+        html +=
+          '<div class="acc-order-items">📍 ' +
+          escapeHtml(o.shippingAddress.address) +
+          ", " +
+          escapeHtml(o.shippingAddress.city) +
+          ", " +
+          escapeHtml(o.shippingAddress.state) +
+          "</div>";
       }
-      html += '<div class="acc-order-total">Total: ₦' + o.total.toLocaleString() + "</div>";
+      html +=
+        '<div class="acc-order-total">Total: ₦' +
+        o.total.toLocaleString() +
+        "</div>";
       html += "</div>";
     });
     el.innerHTML = html;
     wireReviewForms();
     wirePaymentProofForms();
-  } catch(err) {
+  } catch (err) {
     el.innerHTML = '<p class="acc-empty">Could not load orders.</p>';
   }
 }
@@ -360,23 +395,31 @@ function chatBubbleHtml(m) {
   var mine = m.sender === "customer";
   var html = '<div class="chat-bubble-row ' + (mine ? "mine" : "theirs") + '">';
   html += '<div class="chat-bubble">';
-  if (m.photo) html += '<img class="chat-bubble-photo" src="' + m.photo + '" alt="Attached photo" />';
-  if (m.text) html += '<div class="chat-bubble-text">' + escapeHtml(m.text) + '</div>';
-  html += '<div class="chat-bubble-time">' + formatDate(m.createdAt) + '</div>';
-  html += '</div></div>';
+  if (m.photo)
+    html +=
+      '<img class="chat-bubble-photo" src="' +
+      m.photo +
+      '" alt="Attached photo" />';
+  if (m.text)
+    html += '<div class="chat-bubble-text">' + escapeHtml(m.text) + "</div>";
+  html += '<div class="chat-bubble-time">' + formatDate(m.createdAt) + "</div>";
+  html += "</div></div>";
   return html;
 }
 
 async function loadChatThread(isFirstLoad) {
   var el = document.getElementById("chat-thread");
   try {
-    var res = await fetch(API + "/chat/my", { headers: { "Authorization": "Bearer " + token } });
+    var res = await fetch(API + "/chat/my", {
+      headers: { Authorization: "Bearer " + token },
+    });
     var messages = await res.json();
 
     if (!messages.length) {
       el.innerHTML = '<p class="acc-empty">No messages yet — say hello! 👋</p>';
     } else {
-      var wasScrolledToBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 30;
+      var wasScrolledToBottom =
+        el.scrollTop + el.clientHeight >= el.scrollHeight - 30;
       el.innerHTML = messages.map(chatBubbleHtml).join("");
       if (isFirstLoad || wasScrolledToBottom) el.scrollTop = el.scrollHeight;
     }
@@ -384,8 +427,10 @@ async function loadChatThread(isFirstLoad) {
     // We just fetched (and the backend marked admin replies read),
     // so the badge can go quiet now.
     updateChatBadge(0);
-  } catch(err) {
-    if (isFirstLoad) el.innerHTML = '<p class="acc-empty">Could not load chat. Please refresh.</p>';
+  } catch (err) {
+    if (isFirstLoad)
+      el.innerHTML =
+        '<p class="acc-empty">Could not load chat. Please refresh.</p>';
   }
 }
 
@@ -397,20 +442,28 @@ function updateChatBadge(count) {
 }
 
 async function pollChatBadgeIfNotOnChatTab() {
-  var chatTabActive = document.getElementById("tab-chat").classList.contains("active");
+  var chatTabActive = document
+    .getElementById("tab-chat")
+    .classList.contains("active");
   if (chatTabActive) return; // loadChatThread() already keeps this fresh
   try {
-    var res = await fetch(API + "/chat/my/unread-count", { headers: { "Authorization": "Bearer " + token } });
+    var res = await fetch(API + "/chat/my/unread-count", {
+      headers: { Authorization: "Bearer " + token },
+    });
     var data = await res.json();
     updateChatBadge(data.count);
-  } catch(err) { /* quiet fail, not critical */ }
+  } catch (err) {
+    /* quiet fail, not critical */
+  }
 }
 
 function startChatPolling() {
   loadChatThread(true);
   pollChatBadgeIfNotOnChatTab();
-  chatPollTimer = setInterval(function() {
-    var chatTabActive = document.getElementById("tab-chat").classList.contains("active");
+  chatPollTimer = setInterval(function () {
+    var chatTabActive = document
+      .getElementById("tab-chat")
+      .classList.contains("active");
     if (chatTabActive) {
       loadChatThread(false);
     } else {
@@ -419,25 +472,31 @@ function startChatPolling() {
   }, 6000);
 }
 
-document.getElementById("chat-photo-btn").addEventListener("click", function() {
-  document.getElementById("chat-photo-input").click();
-});
-
-document.getElementById("chat-photo-input").addEventListener("change", function() {
-  var file = this.files[0];
-  if (!file) return;
-  resizePhotoFile(file, function(dataUrl) {
-    chatPhotoDataUrl = dataUrl;
-    document.getElementById("chat-photo-preview-img").src = dataUrl;
-    document.getElementById("chat-photo-preview").style.display = "flex";
+document
+  .getElementById("chat-photo-btn")
+  .addEventListener("click", function () {
+    document.getElementById("chat-photo-input").click();
   });
-});
 
-document.getElementById("chat-photo-remove-btn").addEventListener("click", function() {
-  chatPhotoDataUrl = null;
-  document.getElementById("chat-photo-input").value = "";
-  document.getElementById("chat-photo-preview").style.display = "none";
-});
+document
+  .getElementById("chat-photo-input")
+  .addEventListener("change", function () {
+    var file = this.files[0];
+    if (!file) return;
+    resizePhotoFile(file, function (dataUrl) {
+      chatPhotoDataUrl = dataUrl;
+      document.getElementById("chat-photo-preview-img").src = dataUrl;
+      document.getElementById("chat-photo-preview").style.display = "flex";
+    });
+  });
+
+document
+  .getElementById("chat-photo-remove-btn")
+  .addEventListener("click", function () {
+    chatPhotoDataUrl = null;
+    document.getElementById("chat-photo-input").value = "";
+    document.getElementById("chat-photo-preview").style.display = "none";
+  });
 
 async function sendChatMessage() {
   var input = document.getElementById("chat-text-input");
@@ -450,8 +509,11 @@ async function sendChatMessage() {
   try {
     var res = await fetch(API + "/chat/send", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
-      body: JSON.stringify({ text: text, photo: chatPhotoDataUrl })
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token,
+      },
+      body: JSON.stringify({ text: text, photo: chatPhotoDataUrl }),
     });
     if (res.ok) {
       input.value = "";
@@ -460,23 +522,28 @@ async function sendChatMessage() {
       document.getElementById("chat-photo-preview").style.display = "none";
       loadChatThread(false);
     }
-  } catch(err) {
+  } catch (err) {
     console.log("Could not send message:", err);
   } finally {
     sendBtn.disabled = false;
   }
 }
 
-document.getElementById("chat-send-btn").addEventListener("click", sendChatMessage);
-document.getElementById("chat-text-input").addEventListener("keydown", function(e) {
-  if (e.key === "Enter") sendChatMessage();
-});
+document
+  .getElementById("chat-send-btn")
+  .addEventListener("click", sendChatMessage);
+document
+  .getElementById("chat-text-input")
+  .addEventListener("keydown", function (e) {
+    if (e.key === "Enter") sendChatMessage();
+  });
 
 // Show a success banner if we just landed here from checkout
 if (window.location.search.indexOf("order=success") !== -1) {
   var banner = document.createElement("div");
   banner.className = "acc-success";
-  banner.textContent = "✅ Order placed successfully! Track its progress below.";
+  banner.textContent =
+    "✅ Order placed successfully! Track its progress below.";
   var ordersTab = document.getElementById("tab-orders");
   ordersTab.insertBefore(banner, ordersTab.querySelector("h2").nextSibling);
 }

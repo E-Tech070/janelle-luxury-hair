@@ -955,7 +955,6 @@
 html,
 body.admin-page {
   overflow-x: hidden;
- 
 }
 .admin-product-img {
   width: 100%;
@@ -1010,8 +1009,12 @@ body.admin-page {
   border-color: #c9a84c;
   color: #c9a84c;
 }
-/* MOBILE FIX: header row overflowed off-screen on small widths,
-   which caused the shifted/cut-off layout on the whole admin page */
+
+/* ============================================================
+   MOBILE FIX: dashboard was overflowing horizontally on phones
+   (header row + sidebar nav row had no wrap/shrink rules), which
+   made the whole page look shifted right with content cut off.
+   ============================================================ */
 @media (max-width: 768px) {
   .admin-header {
     padding: 0.75rem 1rem;
@@ -1020,15 +1023,20 @@ body.admin-page {
     flex-wrap: wrap;
     row-gap: 0.5rem;
   }
-}
-/* MOBILE FIX: header row overflowed off-screen on small widths,
-   which caused the shifted/cut-off layout on the whole admin page */
-@media (max-width: 768px) {
-  .admin-header {
-    padding: 0.75rem 1rem;
+  .admin-content {
+    padding: 1.25rem 1rem;
   }
-  .admin-header-inner {
+  .admin-tab-header {
     flex-wrap: wrap;
-    row-gap: 0.5rem;
+  }
+  /* 4 nav buttons in one row never fit on a phone — use a 2x2 grid instead */
+  .admin-sidebar nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .admin-nav-btn {
+    font-size: 0.78rem;
+    padding: 0.7rem 0.5rem;
   }
 }
