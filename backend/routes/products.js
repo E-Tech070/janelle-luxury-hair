@@ -66,7 +66,7 @@ router.post(
 // GET ALL PRODUCTS (public — used by the storefront)
 router.get("/", async function (req, res) {
   try {
-    var products = await Product.find({ active: true }).sort({ createdAt: -1 });
+    var products = await Product.find({ active: true }).sort({ createdAt: -1 }).lean();
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
@@ -76,7 +76,7 @@ router.get("/", async function (req, res) {
 // GET ALL PRODUCTS (admin — includes inactive/out of stock ones too)
 router.get("/all", authMiddleware, adminOnly, async function (req, res) {
   try {
-    var products = await Product.find().sort({ createdAt: -1 });
+    var products = await Product.find().sort({ createdAt: -1 }).lean();
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });

@@ -58,13 +58,13 @@ function resizeImageToBase64(file, callback) {
     var img = new Image();
     img.onload = function() {
       var canvas = document.createElement("canvas");
-      var MAX = 1200;
+      var MAX = 800;
       var w = img.width; var h = img.height;
       if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
       if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
       canvas.width = w; canvas.height = h;
       canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-      callback(canvas.toDataURL("image/jpeg", 0.82));
+      callback(canvas.toDataURL("image/jpeg", 0.7));
     };
     img.src = e.target.result;
   };

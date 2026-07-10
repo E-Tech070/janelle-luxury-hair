@@ -77,7 +77,7 @@ router.post("/", authMiddleware, async function(req, res) {
 // items have already been reviewed, and can hide that button.
 router.get("/my", authMiddleware, async function(req, res) {
   try {
-    var reviews = await Review.find({ user: req.user.id });
+    var reviews = await Review.find({ user: req.user.id }).lean();
     res.json(reviews);
   } catch(err) {
     res.status(500).json({ message: "Server error", error: err.message });
@@ -88,7 +88,7 @@ router.get("/my", authMiddleware, async function(req, res) {
 // when a shopper clicks the rating on a product card)
 router.get("/product/:name", async function(req, res) {
   try {
-    var reviews = await Review.find({ productName: req.params.name, approved: true }).sort({ createdAt: -1 });
+    var reviews = await Review.find({ productName: req.params.name, approved: true }).sort({ createdAt: -1 }).lean();
     res.json(reviews);
   } catch(err) {
     res.status(500).json({ message: "Server error", error: err.message });
@@ -120,7 +120,7 @@ router.get("/all", authMiddleware, adminOnly, async function(req, res) {
     var filter = {};
     if (req.query.status === "pending") filter.approved = false;
     if (req.query.status === "approved") filter.approved = true;
-    var reviews = await Review.find(filter).sort({ createdAt: -1 });
+    var reviews = await Review.find(filter).sort({ createdAt: -1 }).lean();
     res.json(reviews);
   } catch(err) {
     res.status(500).json({ message: "Server error", error: err.message });
