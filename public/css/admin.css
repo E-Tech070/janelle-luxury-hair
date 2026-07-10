@@ -1011,23 +1011,38 @@ body.admin-page {
 }
 
 /* ============================================================
-   MOBILE FIX: dashboard was overflowing horizontally on phones
-   (header row + sidebar nav row had no wrap/shrink rules), which
-   made the whole page look shifted right with content cut off.
+   MOBILE FIX: on phones, .admin-header used position:sticky.
+   Chrome has a well-known bug where a sticky element combined with
+   ANY horizontal overflow elsewhere on the page lets the whole
+   viewport pan sideways, hiding content off the right edge —
+   even with overflow-x:hidden set on html/body. That's why this
+   showed up in Chrome but not in Phoenix Browser (which handles
+   sticky differently). Turning sticky off on mobile removes the
+   bug at the source, and columns below remove the row-overflow
+   that could trigger it in the first place.
    ============================================================ */
 @media (max-width: 768px) {
   .admin-header {
+    position: static;
     padding: 0.75rem 1rem;
   }
   .admin-header-inner {
-    flex-wrap: wrap;
-    row-gap: 0.5rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
   }
   .admin-content {
     padding: 1.25rem 1rem;
   }
   .admin-tab-header {
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+  .admin-add-btn {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
   }
   /* 4 nav buttons in one row never fit on a phone — use a 2x2 grid instead */
   .admin-sidebar nav {
