@@ -15,6 +15,7 @@ app.use("/api/messages", require("./routes/messages"));
 app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/chat", require("./routes/chat"));
 app.use("/api/products", require("./routes/products"));
+app.use("/api/ai", require("./routes/ai"));
 app.get("/{*splat}", function (req, res) {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
