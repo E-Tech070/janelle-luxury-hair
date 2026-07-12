@@ -5,6 +5,11 @@ function showError(msg) {
   if (el) { el.textContent = msg; el.style.display = "block"; }
 }
 
+function showSuccess(msg) {
+  var el = document.getElementById("auth-success");
+  if (el) { el.textContent = msg; el.style.display = "block"; }
+}
+
 var loginForm = document.getElementById("login-form");
 if (loginForm) {
   loginForm.addEventListener("submit", async function(e) {
@@ -62,6 +67,59 @@ if (signupForm) {
     } catch(err) {
       showError("Connection error. Make sure the server is running.");
       btn.textContent = "Create Account"; btn.disabled = false;
+    }
+  });
+}
+
+var forgotForm = document.getElementById("forgot-form");
+if (forgotForm) {
+  forgotForm.addEventListener("submit", async function(e) {
+    e.preventDefault();
+    var btn = document.getElementById("forgot-btn");
+    var email = document.getElementById("forgot-email").value.trim();
+    btn.textContent = "Sending...";
+    btn.disabled = true;
+    try {
+      var res = await fetch(API + "/auth/forgot-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
+      var data = await res.json();
+      if (!res.ok) { showError(data.message || "Something went wrong"); btn.textContent = "Send Reset Link"; btn.disabled = false; return; }
+      // Same message shown whether or not the email exists — see the
+      // backend route comment for why we never reveal that either way.
+      showSuccess(data.message);
+      forgotForm.style.display = "none";
+    } catch(err) {
+      showError("Connection error. Please try again.");
+      btn.textContent = "Send Reset Link"; btn.disabled = false;
+    }
+  });
+}
+
+var resetForm = document.getElementById("reset-form");
+if (resetForm) {
+  resetForm.addEventListener("submit", async function(e) {
+    e.preventDefault();
+    var btn = document.getElementById("reset-btn");
+    var password = document.getElementById("reset-password").value;
+    var confirm = document.getElementById("reset-confirm").value;
+    if (password !== confirm) { showError("Passwords do not match"); return; }
+    if (password.length < 6) { showError("Password must be at least 6 characters"); return; }
+
+    var params = new URLSearchParams(window.location.search);
+    var token = params.get("token");
+    if (!token) { showError("This reset link is missing its token. Please request a new one from the Forgot Password page."); return; }
+
+    btn.textContent = "Resetting...";
+    btn.disabled = true;
+    try {
+      var res = await fetch(API + "/auth/reset-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, password }) });
+      var data = await res.json();
+      if (!res.ok) { showError(data.message || "Could not reset password"); btn.textContent = "Reset Password"; btn.disabled = false; return; }
+      showSuccess(data.message + " Redirecting to sign in...");
+      resetForm.style.display = "none";
+      setTimeout(function() { window.location.href = "login.html"; }, 2000);
+    } catch(err) {
+      showError("Connection error. Please try again.");
+      btn.textContent = "Reset Password"; btn.disabled = false;
     }
   });
 }
