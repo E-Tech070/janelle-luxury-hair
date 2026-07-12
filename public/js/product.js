@@ -89,18 +89,41 @@ function renderProduct(product) {
     }
   });
   document.getElementById("qty-plus").addEventListener("click", function () {
+    var stock = typeof product.stock === "number" ? product.stock : null;
+    if (stock !== null && qty >= stock) return;
     qty++;
     document.getElementById("qty-num").textContent = qty;
   });
 
+  // Sold-out state: disable both the quantity picker and the button,
+  // and swap the label so it's obvious why nothing happens on click.
+  var stockNote = document.getElementById("product-stock-note");
+  if (typeof product.stock === "number" && product.stock === 0) {
+    document.getElementById("qty-minus").disabled = true;
+    document.getElementById("qty-plus").disabled = true;
+    var addBtn = document.getElementById("add-to-cart-btn");
+    addBtn.disabled = true;
+    addBtn.textContent = "Sold Out";
+    addBtn.classList.add("sold-out");
+    stockNote.textContent = "😔 This item is currently out of stock.";
+    stockNote.style.display = "block";
+  } else if (typeof product.stock === "number" && product.stock <= 5) {
+    stockNote.textContent =
+      "⚠️ Only " + product.stock + " left in stock — order soon!";
+    stockNote.style.display = "block";
+  }
+
   document
     .getElementById("add-to-cart-btn")
     .addEventListener("click", function () {
+      if (document.getElementById("add-to-cart-btn").disabled) return;
       addToCart(
+        product.id,
         product.name,
         product.price,
         urlImg ? decodeURIComponent(urlImg) : product.img,
         qty,
+        typeof product.stock === "number" ? product.stock : undefined,
       );
       document.getElementById("add-success").style.display = "block";
       document.getElementById("add-to-cart-btn").textContent = "✅ Added!";

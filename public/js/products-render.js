@@ -36,12 +36,16 @@ function buildProductCardHtml(p) {
 
   var outOfStockHtml =
     p.stock === 0
-      ? '<span class="product-badge" style="background:#e74c3c;">Out of Stock</span>'
+      ? '<span class="product-badge product-badge--soldout">Out of Stock</span>'
       : "";
 
   return (
     '<div class="product-card" data-category="' +
     p.category.toLowerCase() +
+    '" data-product-id="' +
+    p.id +
+    '" data-stock="' +
+    p.stock +
     '">' +
     '<div class="product-img-wrap">' +
     '<img src="' +

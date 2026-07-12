@@ -62,17 +62,28 @@ function getCartCount() {
 // CART ACTIONS
 // ------------------------------------------------------------
 
-function addToCart(name, price, img, qty) {
+function addToCart(id, name, price, img, qty, stock) {
   qty = qty || 1;
   var cart = getCart();
   var existing = null;
   for (var i = 0; i < cart.length; i++) {
     if (cart[i].name === name) existing = cart[i];
   }
+
+  // stock is only ever a soft, best-effort cap here for a nicer UX —
+  // the real enforcement happens on the server when the order is
+  // placed, since stock can change between browsing and checkout.
+  var hasStockLimit = typeof stock === "number";
+
   if (existing) {
-    existing.qty = existing.qty + qty;
+    var newQty = existing.qty + qty;
+    if (hasStockLimit && newQty > stock) newQty = stock;
+    existing.qty = newQty;
+    if (hasStockLimit) existing.stock = stock;
+    if (id) existing.id = id;
   } else {
-    cart.push({ name: name, price: price, numericPrice: parsePrice(price), img: img, qty: qty });
+    var startQty = hasStockLimit ? Math.min(qty, stock) : qty;
+    cart.push({ id: id, name: name, price: price, numericPrice: parsePrice(price), img: img, qty: startQty, stock: hasStockLimit ? stock : undefined });
   }
   saveCart(cart);
   renderCartDrawer();
@@ -85,7 +96,9 @@ function changeQty(name, delta) {
   for (var i = 0; i < cart.length; i++) {
     var item = cart[i];
     if (item.name === name) {
-      item.qty = item.qty + delta;
+      var newQty = item.qty + delta;
+      if (typeof item.stock === "number" && newQty > item.stock) newQty = item.stock;
+      item.qty = newQty;
       if (item.qty > 0) newCart.push(item);
     } else {
       newCart.push(item);
@@ -185,6 +198,7 @@ function renderCartDrawer() {
     var html = "";
     for (var i = 0; i < cart.length; i++) {
       var item = cart[i];
+      var atMax = typeof item.stock === "number" && item.qty >= item.stock;
       html +=
         '<div class="cart-item">' +
           '<img class="cart-item-img" src="' + item.img + '" alt="' + item.name + '" loading="lazy" />' +
@@ -194,8 +208,9 @@ function renderCartDrawer() {
             '<div class="cart-item-qty">' +
               '<button class="qty-btn" data-action="dec" data-name="' + item.name + '">-</button>' +
               '<span class="qty-num">' + item.qty + '</span>' +
-              '<button class="qty-btn" data-action="inc" data-name="' + item.name + '">+</button>' +
+              '<button class="qty-btn" data-action="inc" data-name="' + item.name + '"' + (atMax ? ' disabled' : '') + '>+</button>' +
             '</div>' +
+            (atMax ? '<p class="cart-item-stock-note">Max available in stock</p>' : '') +
           '</div>' +
           '<button class="cart-item-remove" data-name="' + item.name + '" aria-label="Remove">✕</button>' +
         '</div>';
@@ -247,12 +262,22 @@ function wireAddToCartButtons() {
     if (!nameEl || !priceEl || !infoEl) return;
     if (infoEl.querySelector(".add-to-cart-btn")) return; // already wired
 
+    // data-stock is only present on cards rendered from the database
+    // (products-render.js) — older static cards (no stock tracking)
+    // just won't have it, and behave exactly like before.
+    var stockAttr = card.dataset.stock;
+    var stock = stockAttr !== undefined ? parseInt(stockAttr, 10) : null;
+    var productId = card.dataset.productId || (imgEl && imgEl.dataset.productId) || null;
+    var isSoldOut = stock === 0;
+
     var btn = document.createElement("button");
-    btn.className = "add-to-cart-btn";
-    btn.textContent = "+ Add to Cart";
+    btn.className = "add-to-cart-btn" + (isSoldOut ? " sold-out" : "");
+    btn.textContent = isSoldOut ? "Sold Out" : "+ Add to Cart";
+    if (isSoldOut) btn.disabled = true;
 
     btn.addEventListener("click", function() {
-      addToCart(nameEl.textContent.trim(), priceEl.textContent.trim(), imgEl ? imgEl.src : "");
+      if (btn.disabled) return;
+      addToCart(productId, nameEl.textContent.trim(), priceEl.textContent.trim(), imgEl ? imgEl.src : "", 1, stock === null ? undefined : stock);
       btn.textContent = "Added! ✓";
       btn.classList.add("added");
       setTimeout(function() {
