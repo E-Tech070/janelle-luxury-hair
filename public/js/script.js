@@ -76,10 +76,13 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // ============================================================
-  // PRODUCT FILTER
+  // PRODUCT FILTER (category button active-state only)
+  // Actual show/hide for category — combined with price, sort and
+  // search — happens in applyFilters() further down, since a
+  // product now has to match ALL active filters at once, not just
+  // category alone.
   // ============================================================
   var filterBtns = document.querySelectorAll(".filter-btn");
-  var productCards = document.querySelectorAll(".product-card");
 
   filterBtns.forEach(function (btn) {
     btn.addEventListener("click", function () {
@@ -87,16 +90,6 @@ document.addEventListener("DOMContentLoaded", function () {
         b.classList.remove("active");
       });
       btn.classList.add("active");
-
-      var filter = btn.dataset.filter;
-      productCards.forEach(function (card) {
-        if (filter === "all" || card.dataset.category === filter) {
-          card.classList.remove("hidden");
-          card.style.animation = "fadeUp 0.4s ease forwards";
-        } else {
-          card.classList.add("hidden");
-        }
-      });
     });
   });
 
@@ -126,10 +119,15 @@ document.addEventListener("DOMContentLoaded", function () {
 // new arrivals, and the accessories section, since they all
 // use the same data-product-id attribute on their <img>.
 // ============================================================
-document.addEventListener("click", function(e) {
+document.addEventListener("click", function (e) {
   var card = e.target.closest(".product-card, .arrival-card, .acc-card");
   if (!card) return;
-  if (e.target.closest("a") || e.target.closest("button") || e.target.closest("select")) return;
+  if (
+    e.target.closest("a") ||
+    e.target.closest("button") ||
+    e.target.closest("select")
+  )
+    return;
 
   var img = card.querySelector("img[data-product-id]");
   if (!img) return;
@@ -152,6 +150,7 @@ document.addEventListener("click", function(e) {
 document.addEventListener("DOMContentLoaded", function () {
   var priceFilter = document.getElementById("price-filter");
   var sortFilter = document.getElementById("sort-filter");
+  var searchFilter = document.getElementById("search-filter");
   if (!priceFilter || !sortFilter) return;
 
   function getPrice(card) {
@@ -168,6 +167,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function applyFilters() {
     var priceVal = priceFilter.value;
     var sortVal = sortFilter.value;
+    var searchVal = searchFilter ? searchFilter.value.trim().toLowerCase() : "";
     var activeCategory =
       (document.querySelector(".filter-btn.active") || {}).dataset.filter ||
       "all";
@@ -176,7 +176,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var cards = Array.from(grid.querySelectorAll(".product-card"));
 
-    // Show/hide by category and price
+    // Show/hide by category, price and search — a card only stays
+    // visible if it matches ALL active filters at once, not just one.
     cards.forEach(function (card) {
       var categoryMatch =
         activeCategory === "all" || card.dataset.category === activeCategory;
@@ -188,7 +189,12 @@ document.addEventListener("DOMContentLoaded", function () {
         var max = parseInt(parts[1]);
         priceMatch = price >= min && price <= max;
       }
-      card.classList.toggle("hidden", !(categoryMatch && priceMatch));
+      var searchMatch =
+        !searchVal || getName(card).toLowerCase().indexOf(searchVal) !== -1;
+      card.classList.toggle(
+        "hidden",
+        !(categoryMatch && priceMatch && searchMatch),
+      );
     });
 
     // Sort visible cards
@@ -206,10 +212,31 @@ document.addEventListener("DOMContentLoaded", function () {
         grid.appendChild(card);
       });
     }
+
+    // Let the shopper know clearly when nothing matches, instead of
+    // just leaving them looking at an empty grid.
+    var noResultsEl = document.getElementById("shop-no-results");
+    if (noResultsEl) {
+      var anyVisible = cards.some(function (c) {
+        return !c.classList.contains("hidden");
+      });
+      noResultsEl.style.display =
+        cards.length && !anyVisible ? "block" : "none";
+    }
   }
 
   priceFilter.addEventListener("change", applyFilters);
   sortFilter.addEventListener("change", applyFilters);
+
+  if (searchFilter) {
+    // A short debounce so filtering doesn't re-run on every single
+    // keystroke while someone is still typing.
+    var searchDebounce;
+    searchFilter.addEventListener("input", function () {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(applyFilters, 150);
+    });
+  }
 
   // Hook into existing category filter buttons
   document.querySelectorAll(".filter-btn").forEach(function (btn) {
@@ -217,4 +244,17 @@ document.addEventListener("DOMContentLoaded", function () {
       setTimeout(applyFilters, 10);
     });
   });
+
+  // Products load asynchronously (see products-render.js). Re-run
+  // filters once they're actually in the DOM, in case the shopper
+  // already typed a search or picked a filter before the fetch
+  // finished — otherwise the freshly-added cards would ignore
+  // whatever was already selected.
+  var shopGridEl = document.getElementById("shopGrid");
+  if (shopGridEl) {
+    var gridObserver = new MutationObserver(function () {
+      applyFilters();
+    });
+    gridObserver.observe(shopGridEl, { childList: true });
+  }
 });
