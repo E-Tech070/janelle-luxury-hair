@@ -39,6 +39,18 @@ function buildProductCardHtml(p) {
       ? '<span class="product-badge product-badge--soldout">Out of Stock</span>'
       : "";
 
+  var stockLineHtml = "";
+  if (typeof p.stock === "number" && p.stock > 0) {
+    stockLineHtml =
+      p.stock <= 5
+        ? '<span class="product-stock-count product-stock-count--low">⚠️ Only ' +
+          p.stock +
+          " left</span>"
+        : '<span class="product-stock-count">📦 ' +
+          p.stock +
+          " in stock</span>";
+  }
+
   return (
     '<div class="product-card" data-category="' +
     p.category.toLowerCase() +
@@ -71,6 +83,7 @@ function buildProductCardHtml(p) {
     '<div class="product-footer">' +
     priceHtml +
     "</div>" +
+    stockLineHtml +
     "</div>" +
     "</div>"
   );

@@ -106,10 +106,16 @@ function renderProduct(product) {
     addBtn.textContent = "Sold Out";
     addBtn.classList.add("sold-out");
     stockNote.textContent = "😔 This item is currently out of stock.";
+    stockNote.className = "product-stock-note out";
     stockNote.style.display = "block";
   } else if (typeof product.stock === "number" && product.stock <= 5) {
     stockNote.textContent =
       "⚠️ Only " + product.stock + " left in stock — order soon!";
+    stockNote.className = "product-stock-note low";
+    stockNote.style.display = "block";
+  } else if (typeof product.stock === "number") {
+    stockNote.textContent = "📦 " + product.stock + " in stock";
+    stockNote.className = "product-stock-note";
     stockNote.style.display = "block";
   }
 

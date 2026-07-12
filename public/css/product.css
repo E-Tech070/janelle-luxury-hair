@@ -228,8 +228,14 @@
 }
 .product-stock-note {
   font-size: 0.82rem;
-  color: #d9a441;
+  color: #888;
   margin: -0.5rem 0 1rem;
+}
+.product-stock-note.low {
+  color: #d9a441;
+}
+.product-stock-note.out {
+  color: #e74c3c;
 }
 .product-guarantees {
   display: flex;

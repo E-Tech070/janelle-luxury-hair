@@ -908,6 +908,15 @@ section {
   padding-top: 0.85rem;
   border-top: 1px solid var(--dark-border);
 }
+.product-stock-count {
+  display: block;
+  font-size: 0.7rem;
+  color: #777;
+  margin-top: 0.4rem;
+}
+.product-stock-count--low {
+  color: #d9a441;
+}
 .product-price {
   font-family: var(--font-display);
   font-size: 1rem;
