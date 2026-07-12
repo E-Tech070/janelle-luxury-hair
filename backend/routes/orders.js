@@ -3,6 +3,8 @@ var router = express.Router();
 var jwt = require("jsonwebtoken");
 var Order = require("../models/Order");
 var Product = require("../models/Product");
+var sendOrderConfirmationEmail =
+  require("../utils/email").sendOrderConfirmationEmail;
 
 function authMiddleware(req, res, next) {
   var token =
@@ -45,12 +47,18 @@ async function reserveStock(items) {
 
     var updated = await Product.findOneAndUpdate(
       { id: productId, stock: { $gte: item.qty } },
-      { $inc: { stock: -item.qty } }
+      { $inc: { stock: -item.qty } },
     );
 
     if (!updated) {
       await releaseStock(reserved);
-      return { ok: false, message: "Sorry, \"" + item.name + "\" doesn't have enough stock left. Please update your cart and try again." };
+      return {
+        ok: false,
+        message:
+          'Sorry, "' +
+          item.name +
+          "\" doesn't have enough stock left. Please update your cart and try again.",
+      };
     }
     reserved.push({ productId: productId, qty: item.qty });
   }
@@ -59,7 +67,10 @@ async function reserveStock(items) {
 
 async function releaseStock(reserved) {
   for (var i = 0; i < reserved.length; i++) {
-    await Product.updateOne({ id: reserved[i].productId }, { $inc: { stock: reserved[i].qty } });
+    await Product.updateOne(
+      { id: reserved[i].productId },
+      { $inc: { stock: reserved[i].qty } },
+    );
   }
 }
 
@@ -98,14 +109,14 @@ router.post("/", authMiddleware, async function (req, res) {
     // same thing "productId" for clarity on the admin/order side.
     // Rebuilding the array here also means we only ever save the
     // fields we actually expect, not whatever else a client sends.
-    var orderItems = items.map(function(it) {
+    var orderItems = items.map(function (it) {
       return {
         productId: it.productId || it.id || undefined,
         name: it.name,
         price: it.price,
         numericPrice: it.numericPrice,
         qty: it.qty,
-        img: it.img
+        img: it.img,
       };
     });
 
@@ -129,10 +140,21 @@ router.post("/", authMiddleware, async function (req, res) {
     } catch (saveErr) {
       // The order itself failed to save after stock was already
       // reserved — give the stock back so it isn't lost.
-      var toRelease = items.filter(function(it) { return it.productId || it.id; }).map(function(it) { return { productId: it.productId || it.id, qty: it.qty }; });
+      var toRelease = items
+        .filter(function (it) {
+          return it.productId || it.id;
+        })
+        .map(function (it) {
+          return { productId: it.productId || it.id, qty: it.qty };
+        });
       await releaseStock(toRelease);
       throw saveErr;
     }
+
+    // sendOrderConfirmationEmail() never throws on its own — if
+    // Resend is down or misconfigured it just logs and moves on, so
+    // this can never cause the order itself to fail to save.
+    await sendOrderConfirmationEmail(order);
 
     res.status(201).json(order);
   } catch (err) {
@@ -200,14 +222,21 @@ router.patch(
   async function (req, res) {
     try {
       var existing = await Order.findById(req.params.id);
-      if (!existing) return res.status(404).json({ message: "Order not found" });
+      if (!existing)
+        return res.status(404).json({ message: "Order not found" });
 
       // Cancelling an order means those items are back in stock —
       // but only restore once, so cancelling an already-cancelled
       // order twice doesn't accidentally add stock that was never
       // actually returned.
       if (req.body.status === "cancelled" && existing.status !== "cancelled") {
-        var toRelease = existing.items.filter(function(it) { return it.productId; }).map(function(it) { return { productId: it.productId, qty: it.qty }; });
+        var toRelease = existing.items
+          .filter(function (it) {
+            return it.productId;
+          })
+          .map(function (it) {
+            return { productId: it.productId, qty: it.qty };
+          });
         await releaseStock(toRelease);
       }
 
