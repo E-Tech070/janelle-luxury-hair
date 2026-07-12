@@ -150,6 +150,27 @@
   font-size: 1.05rem;
   padding: 3rem 1rem;
 }
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.admin-page-btn {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #c9a84c;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-family: Jost, sans-serif;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.admin-page-btn:hover:not(:disabled) { border-color: #c9a84c; background: rgba(201,168,76,0.08); }
+.admin-page-btn:disabled { color: #444; cursor: not-allowed; }
+.admin-page-status { color: #888; font-size: 0.78rem; }
 .admin-order-card {
   background: #161616;
   border: 1px solid #2a2a2a;

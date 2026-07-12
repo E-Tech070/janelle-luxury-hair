@@ -208,8 +208,23 @@ router.get("/my", authMiddleware, async function (req, res) {
 
 router.get("/all", authMiddleware, adminOnly, async function (req, res) {
   try {
-    var orders = await Order.find().sort({ createdAt: -1 }).lean();
-    res.json(orders);
+    var page = Math.max(parseInt(req.query.page) || 1, 1);
+    var limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 50);
+    var skip = (page - 1) * limit;
+
+    var totalOrders = await Order.countDocuments();
+    var orders = await Order.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    res.json({
+      orders: orders,
+      currentPage: page,
+      totalPages: Math.max(Math.ceil(totalOrders / limit), 1),
+      totalOrders: totalOrders,
+    });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }

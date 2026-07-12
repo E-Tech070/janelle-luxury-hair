@@ -2491,6 +2491,40 @@ img {
   border-color: #c9a84c;
   color: #fff;
 }
+
+.shop-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin: 2.5rem 0 1rem;
+}
+.shop-page-btn {
+  background: transparent;
+  border: 1px solid var(--dark-border);
+  color: var(--gold);
+  padding: 0.6rem 1.25rem;
+  border-radius: 100px;
+  font-family: Jost, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 44px;
+}
+.shop-page-btn:hover:not(:disabled) {
+  border-color: var(--gold);
+  background: rgba(201, 168, 76, 0.08);
+}
+.shop-page-btn:disabled {
+  color: #444;
+  cursor: not-allowed;
+}
+.shop-page-status {
+  color: #888;
+  font-size: 0.78rem;
+  font-family: Jost, sans-serif;
+}
 @media (max-width: 768px) {
   .shop-filters-bar {
     flex-direction: column;

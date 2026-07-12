@@ -153,6 +153,9 @@ document.addEventListener("DOMContentLoaded", function () {
   var searchFilter = document.getElementById("search-filter");
   if (!priceFilter || !sortFilter) return;
 
+  var PRODUCTS_PER_PAGE = 12;
+  var currentShopPage = 1;
+
   function getPrice(card) {
     var el = card.querySelector(".product-price");
     if (!el) return 0;
@@ -164,7 +167,9 @@ document.addEventListener("DOMContentLoaded", function () {
     return el ? el.textContent.trim() : "";
   }
 
-  function applyFilters() {
+  function applyFilters(resetPage) {
+    if (resetPage) currentShopPage = 1;
+
     var priceVal = priceFilter.value;
     var sortVal = sortFilter.value;
     var searchVal = searchFilter ? searchFilter.value.trim().toLowerCase() : "";
@@ -176,9 +181,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var cards = Array.from(grid.querySelectorAll(".product-card"));
 
-    // Show/hide by category, price and search — a card only stays
-    // visible if it matches ALL active filters at once, not just one.
-    cards.forEach(function (card) {
+    // Figure out which cards match category + price + search — this
+    // list (not the raw card order) is what gets sorted and paginated.
+    var matches = cards.filter(function (card) {
       var categoryMatch =
         activeCategory === "all" || card.dataset.category === activeCategory;
       var price = getPrice(card);
@@ -191,42 +196,58 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       var searchMatch =
         !searchVal || getName(card).toLowerCase().indexOf(searchVal) !== -1;
-      card.classList.toggle(
-        "hidden",
-        !(categoryMatch && priceMatch && searchMatch),
-      );
+      return categoryMatch && priceMatch && searchMatch;
     });
 
-    // Sort visible cards
     if (sortVal !== "default") {
-      var visible = cards.filter(function (c) {
-        return !c.classList.contains("hidden");
-      });
-      visible.sort(function (a, b) {
+      matches.sort(function (a, b) {
         if (sortVal === "price-low") return getPrice(a) - getPrice(b);
         if (sortVal === "price-high") return getPrice(b) - getPrice(a);
         if (sortVal === "name") return getName(a).localeCompare(getName(b));
         return 0;
       });
-      visible.forEach(function (card) {
+      matches.forEach(function (card) {
         grid.appendChild(card);
       });
     }
 
-    // Let the shopper know clearly when nothing matches, instead of
-    // just leaving them looking at an empty grid.
+    // Clamp the page in case a filter change shrank the result set
+    // below where the shopper currently was.
+    var totalPages = Math.max(Math.ceil(matches.length / PRODUCTS_PER_PAGE), 1);
+    if (currentShopPage > totalPages) currentShopPage = totalPages;
+    var start = (currentShopPage - 1) * PRODUCTS_PER_PAGE;
+    var end = start + PRODUCTS_PER_PAGE;
+    var pageSlice = matches.slice(start, end);
+
+    // A card is visible only if it matches the filters AND falls
+    // within the current page's slice — everything else (whether it
+    // failed a filter, or just belongs to a different page) is hidden
+    // the same way, via the existing .hidden class.
+    cards.forEach(function (card) {
+      card.classList.toggle("hidden", pageSlice.indexOf(card) === -1);
+    });
+
     var noResultsEl = document.getElementById("shop-no-results");
     if (noResultsEl) {
-      var anyVisible = cards.some(function (c) {
-        return !c.classList.contains("hidden");
-      });
       noResultsEl.style.display =
-        cards.length && !anyVisible ? "block" : "none";
+        cards.length && !matches.length ? "block" : "none";
     }
+
+    renderShopPagination(currentShopPage, totalPages, function (page) {
+      currentShopPage = page;
+      applyFilters(false);
+      document
+        .getElementById("shopGrid")
+        .scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
-  priceFilter.addEventListener("change", applyFilters);
-  sortFilter.addEventListener("change", applyFilters);
+  priceFilter.addEventListener("change", function () {
+    applyFilters(true);
+  });
+  sortFilter.addEventListener("change", function () {
+    applyFilters(true);
+  });
 
   if (searchFilter) {
     // A short debounce so filtering doesn't re-run on every single
@@ -234,14 +255,18 @@ document.addEventListener("DOMContentLoaded", function () {
     var searchDebounce;
     searchFilter.addEventListener("input", function () {
       clearTimeout(searchDebounce);
-      searchDebounce = setTimeout(applyFilters, 150);
+      searchDebounce = setTimeout(function () {
+        applyFilters(true);
+      }, 150);
     });
   }
 
   // Hook into existing category filter buttons
   document.querySelectorAll(".filter-btn").forEach(function (btn) {
     btn.addEventListener("click", function () {
-      setTimeout(applyFilters, 10);
+      setTimeout(function () {
+        applyFilters(true);
+      }, 10);
     });
   });
 
@@ -253,8 +278,45 @@ document.addEventListener("DOMContentLoaded", function () {
   var shopGridEl = document.getElementById("shopGrid");
   if (shopGridEl) {
     var gridObserver = new MutationObserver(function () {
-      applyFilters();
+      applyFilters(true);
     });
     gridObserver.observe(shopGridEl, { childList: true });
   }
 });
+
+// Shared Prev/Next pagination control for the public shop grid.
+function renderShopPagination(currentPage, totalPages, onPageChange) {
+  var el = document.getElementById("shop-pagination");
+  if (!el) return;
+  if (totalPages <= 1) {
+    el.innerHTML = "";
+    return;
+  }
+
+  var html =
+    '<button class="shop-page-btn" id="shop-page-prev"' +
+    (currentPage <= 1 ? " disabled" : "") +
+    ">← Prev</button>";
+  html +=
+    '<span class="shop-page-status">Page ' +
+    currentPage +
+    " of " +
+    totalPages +
+    "</span>";
+  html +=
+    '<button class="shop-page-btn" id="shop-page-next"' +
+    (currentPage >= totalPages ? " disabled" : "") +
+    ">Next →</button>";
+  el.innerHTML = html;
+
+  var prevBtn = document.getElementById("shop-page-prev");
+  var nextBtn = document.getElementById("shop-page-next");
+  if (prevBtn)
+    prevBtn.addEventListener("click", function () {
+      onPageChange(currentPage - 1);
+    });
+  if (nextBtn)
+    nextBtn.addEventListener("click", function () {
+      onPageChange(currentPage + 1);
+    });
+}
