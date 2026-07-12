@@ -55,6 +55,8 @@ var currentOrdersPage = 1;
 
 async function loadOrders(page) {
   currentOrdersPage = page || currentOrdersPage;
+  document.getElementById("admin-orders-list").innerHTML =
+    '<div class="loading-state"><span class="spinner"></span> Loading orders...</div>';
   try {
     var res = await fetch(
       API + "/orders/all?page=" + currentOrdersPage + "&limit=10",
@@ -271,6 +273,8 @@ function chatBubbleHtml(m) {
 }
 
 async function loadConversations() {
+  document.getElementById("admin-chat-list").innerHTML =
+    '<div class="loading-state"><span class="spinner"></span> Loading...</div>';
   try {
     var res = await fetch(API + "/chat/conversations", {
       headers: { Authorization: "Bearer " + token },
@@ -335,6 +339,8 @@ async function openThread(customerId) {
   document.getElementById("admin-chat-thread-header").style.display = "block";
   document.getElementById("admin-chat-input-row").style.display = "flex";
   var threadEl = document.getElementById("admin-chat-thread");
+  threadEl.innerHTML =
+    '<div class="loading-state"><span class="spinner"></span> Loading...</div>';
   try {
     var res = await fetch(API + "/chat/" + customerId, {
       headers: { Authorization: "Bearer " + token },
@@ -454,6 +460,8 @@ setInterval(function () {
 // REVIEWS
 // ============================================================
 async function loadReviews() {
+  document.getElementById("admin-reviews-list").innerHTML =
+    '<div class="loading-state"><span class="spinner"></span> Loading reviews...</div>';
   try {
     var res = await fetch(API + "/reviews/pending", {
       headers: { Authorization: "Bearer " + token },
@@ -533,6 +541,8 @@ async function loadReviews() {
 // PRODUCTS
 // ============================================================
 async function loadProducts() {
+  document.getElementById("admin-products-list").innerHTML =
+    '<div class="loading-state"><span class="spinner"></span> Loading products...</div>';
   try {
     var res = await fetch(API + "/products/all", {
       headers: { Authorization: "Bearer " + token },

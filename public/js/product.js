@@ -13,6 +13,10 @@ function getParam(name) {
 
 function loadProduct() {
   var id = getParam("id");
+  var container = document.querySelector(".product-container");
+  if (container)
+    container.innerHTML =
+      '<div class="loading-state" style="grid-column:1/-1;"><span class="spinner"></span> Loading product...</div>';
 
   fetch(PRODUCT_API + "/" + id)
     .then(function (res) {
@@ -33,9 +37,9 @@ function loadProduct() {
         }
       }
       if (fallback) renderProduct(fallback);
-      else {
-        document.querySelector(".product-container").innerHTML =
-          '<p style="color:#888;text-align:center;grid-column:1/-1;padding:4rem;">Product not found. <a href="index.html#shop" style="color:#c9a84c;">Back to shop</a></p>';
+      else if (container) {
+        container.innerHTML =
+          '<p class="product-not-found">Product not found. <a href="index.html#shop">Back to shop</a></p>';
       }
     });
 }

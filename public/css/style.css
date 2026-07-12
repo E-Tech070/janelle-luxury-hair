@@ -79,6 +79,37 @@ ul {
   visibility: hidden;
   pointer-events: none;
 }
+
+/* ============================================================
+   SHARED LOADING SPINNER — used anywhere a list is re-fetching
+   (admin tabs, account tabs, product page) so the screen never
+   just looks frozen while waiting on the server.
+   ============================================================ */
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 3rem 1rem;
+  color: #888;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 1.05rem;
+}
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(201, 168, 76, 0.25);
+  border-top-color: var(--gold, #c9a84c);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .preloader-inner {
   text-align: center;
 }

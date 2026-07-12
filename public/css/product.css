@@ -308,3 +308,20 @@
     width: 100%;
   }
 }
+
+.product-not-found {
+  color: #888;
+  text-align: center;
+  grid-column: 1 / -1;
+  padding: 4rem 1rem;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 1.1rem;
+}
+.product-not-found a {
+  color: #c9a84c;
+  text-decoration: none;
+}
+.product-not-found a:hover {
+  text-decoration: underline;
+}

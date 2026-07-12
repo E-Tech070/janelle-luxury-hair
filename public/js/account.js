@@ -308,6 +308,8 @@ function wireReviewForms() {
 
 async function loadOrders() {
   var el = document.getElementById("orders-list");
+  el.innerHTML =
+    '<div class="loading-state"><span class="spinner"></span> Loading your orders...</div>';
   try {
     await loadMyReviews();
     var res = await fetch(API + "/orders/my", {
@@ -409,6 +411,9 @@ function chatBubbleHtml(m) {
 
 async function loadChatThread(isFirstLoad) {
   var el = document.getElementById("chat-thread");
+  if (isFirstLoad)
+    el.innerHTML =
+      '<div class="loading-state"><span class="spinner"></span> Loading...</div>';
   try {
     var res = await fetch(API + "/chat/my", {
       headers: { Authorization: "Bearer " + token },
