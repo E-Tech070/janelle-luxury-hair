@@ -5,6 +5,7 @@ var Product = require("../models/Product");
 var multer = require("multer");
 var path = require("path");
 var fs = require("fs");
+var sendServerError = require("../utils/errorResponse");
 
 // Where uploaded product photos get saved. They land in
 // public/images/products/ so they're served automatically by
@@ -69,7 +70,7 @@ router.get("/", async function (req, res) {
     var products = await Product.find({ active: true }).sort({ createdAt: -1 }).lean();
     res.json(products);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -79,7 +80,7 @@ router.get("/all", authMiddleware, adminOnly, async function (req, res) {
     var products = await Product.find().sort({ createdAt: -1 }).lean();
     res.json(products);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -90,7 +91,7 @@ router.get("/:id", async function (req, res) {
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json(product);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -108,6 +109,12 @@ router.post("/", authMiddleware, adminOnly, async function (req, res) {
       return res.status(400).json({
         message: "id, name, category, numericPrice and img are required",
       });
+    }
+    if (typeof body.numericPrice !== "number" || body.numericPrice <= 0) {
+      return res.status(400).json({ message: "Price must be a positive number" });
+    }
+    if (body.stock !== undefined && (!Number.isInteger(body.stock) || body.stock < 0)) {
+      return res.status(400).json({ message: "Stock must be a whole number, 0 or more" });
     }
     var existing = await Product.findOne({ id: body.id });
     if (existing)
@@ -132,7 +139,7 @@ router.post("/", authMiddleware, adminOnly, async function (req, res) {
     await product.save();
     res.status(201).json(product);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -140,6 +147,12 @@ router.post("/", authMiddleware, adminOnly, async function (req, res) {
 router.put("/:id", authMiddleware, adminOnly, async function (req, res) {
   try {
     var body = req.body;
+    if (body.numericPrice !== undefined && (typeof body.numericPrice !== "number" || body.numericPrice <= 0)) {
+      return res.status(400).json({ message: "Price must be a positive number" });
+    }
+    if (body.stock !== undefined && (!Number.isInteger(body.stock) || body.stock < 0)) {
+      return res.status(400).json({ message: "Stock must be a whole number, 0 or more" });
+    }
     var update = {};
     [
       "name",
@@ -165,7 +178,7 @@ router.put("/:id", authMiddleware, adminOnly, async function (req, res) {
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json(product);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -176,7 +189,7 @@ router.delete("/:id", authMiddleware, adminOnly, async function (req, res) {
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.json({ message: "Product deleted" });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 

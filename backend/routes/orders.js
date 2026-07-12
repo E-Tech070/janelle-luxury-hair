@@ -3,8 +3,8 @@ var router = express.Router();
 var jwt = require("jsonwebtoken");
 var Order = require("../models/Order");
 var Product = require("../models/Product");
-var sendOrderConfirmationEmail =
-  require("../utils/email").sendOrderConfirmationEmail;
+var sendOrderConfirmationEmail = require("../utils/email").sendOrderConfirmationEmail;
+var sendServerError = require("../utils/errorResponse");
 
 function authMiddleware(req, res, next) {
   var token =
@@ -47,18 +47,12 @@ async function reserveStock(items) {
 
     var updated = await Product.findOneAndUpdate(
       { id: productId, stock: { $gte: item.qty } },
-      { $inc: { stock: -item.qty } },
+      { $inc: { stock: -item.qty } }
     );
 
     if (!updated) {
       await releaseStock(reserved);
-      return {
-        ok: false,
-        message:
-          'Sorry, "' +
-          item.name +
-          "\" doesn't have enough stock left. Please update your cart and try again.",
-      };
+      return { ok: false, message: "Sorry, \"" + item.name + "\" doesn't have enough stock left. Please update your cart and try again." };
     }
     reserved.push({ productId: productId, qty: item.qty });
   }
@@ -67,18 +61,36 @@ async function reserveStock(items) {
 
 async function releaseStock(reserved) {
   for (var i = 0; i < reserved.length; i++) {
-    await Product.updateOne(
-      { id: reserved[i].productId },
-      { $inc: { stock: reserved[i].qty } },
-    );
+    await Product.updateOne({ id: reserved[i].productId }, { $inc: { stock: reserved[i].qty } });
   }
+}
+
+// Every item must be a real, sane line item before we trust it for
+// stock reservation or pricing. This also is what makes it safe to
+// recompute the order total ourselves below, instead of trusting
+// whatever total the client sent — a client could otherwise submit
+// real products with a manipulated (near-zero) total and pay
+// whatever price they chose.
+function validateOrderItems(items) {
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i];
+    if (!item || typeof item.name !== "string" || !item.name.trim()) {
+      return "Every item needs a valid name.";
+    }
+    if (typeof item.numericPrice !== "number" || item.numericPrice <= 0) {
+      return "\"" + item.name + "\" has an invalid price.";
+    }
+    if (!Number.isInteger(item.qty) || item.qty <= 0 || item.qty > 50) {
+      return "\"" + item.name + "\" has an invalid quantity.";
+    }
+  }
+  return null;
 }
 
 router.post("/", authMiddleware, async function (req, res) {
   try {
     var {
       items,
-      total,
       note,
       userName,
       userEmail,
@@ -91,6 +103,10 @@ router.post("/", authMiddleware, async function (req, res) {
       return res.status(400).json({ message: "No items in order" });
     if (!userName || !userEmail)
       return res.status(400).json({ message: "Missing customer details" });
+
+    var itemError = validateOrderItems(items);
+    if (itemError) return res.status(400).json({ message: itemError });
+
     var method = deliveryMethod === "pickup" ? "pickup" : "delivery";
     if (
       method === "delivery" &&
@@ -109,16 +125,20 @@ router.post("/", authMiddleware, async function (req, res) {
     // same thing "productId" for clarity on the admin/order side.
     // Rebuilding the array here also means we only ever save the
     // fields we actually expect, not whatever else a client sends.
-    var orderItems = items.map(function (it) {
+    var orderItems = items.map(function(it) {
       return {
         productId: it.productId || it.id || undefined,
         name: it.name,
         price: it.price,
         numericPrice: it.numericPrice,
         qty: it.qty,
-        img: it.img,
+        img: it.img
       };
     });
+
+    // Server computes the real total from validated items — the
+    // client's number is never trusted for what actually gets charged.
+    var total = orderItems.reduce(function(sum, it) { return sum + (it.numericPrice * it.qty); }, 0);
 
     var order;
     try {
@@ -140,13 +160,7 @@ router.post("/", authMiddleware, async function (req, res) {
     } catch (saveErr) {
       // The order itself failed to save after stock was already
       // reserved — give the stock back so it isn't lost.
-      var toRelease = items
-        .filter(function (it) {
-          return it.productId || it.id;
-        })
-        .map(function (it) {
-          return { productId: it.productId || it.id, qty: it.qty };
-        });
+      var toRelease = items.filter(function(it) { return it.productId || it.id; }).map(function(it) { return { productId: it.productId || it.id, qty: it.qty }; });
       await releaseStock(toRelease);
       throw saveErr;
     }
@@ -158,7 +172,7 @@ router.post("/", authMiddleware, async function (req, res) {
 
     res.status(201).json(order);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -172,7 +186,7 @@ router.patch("/:id/proof", authMiddleware, async function (req, res) {
     await order.save();
     res.json(order);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -190,7 +204,7 @@ router.patch(
       if (!order) return res.status(404).json({ message: "Order not found" });
       res.json(order);
     } catch (err) {
-      res.status(500).json({ message: "Server error", error: err.message });
+      sendServerError(res, err);
     }
   },
 );
@@ -202,7 +216,7 @@ router.get("/my", authMiddleware, async function (req, res) {
       .lean();
     res.json(orders);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -223,10 +237,10 @@ router.get("/all", authMiddleware, adminOnly, async function (req, res) {
       orders: orders,
       currentPage: page,
       totalPages: Math.max(Math.ceil(totalOrders / limit), 1),
-      totalOrders: totalOrders,
+      totalOrders: totalOrders
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -237,21 +251,14 @@ router.patch(
   async function (req, res) {
     try {
       var existing = await Order.findById(req.params.id);
-      if (!existing)
-        return res.status(404).json({ message: "Order not found" });
+      if (!existing) return res.status(404).json({ message: "Order not found" });
 
       // Cancelling an order means those items are back in stock —
       // but only restore once, so cancelling an already-cancelled
       // order twice doesn't accidentally add stock that was never
       // actually returned.
       if (req.body.status === "cancelled" && existing.status !== "cancelled") {
-        var toRelease = existing.items
-          .filter(function (it) {
-            return it.productId;
-          })
-          .map(function (it) {
-            return { productId: it.productId, qty: it.qty };
-          });
+        var toRelease = existing.items.filter(function(it) { return it.productId; }).map(function(it) { return { productId: it.productId, qty: it.qty }; });
         await releaseStock(toRelease);
       }
 
@@ -259,7 +266,7 @@ router.patch(
       await existing.save();
       res.json(existing);
     } catch (err) {
-      res.status(500).json({ message: "Server error", error: err.message });
+      sendServerError(res, err);
     }
   },
 );

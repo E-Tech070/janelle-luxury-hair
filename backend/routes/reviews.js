@@ -3,6 +3,7 @@ var router = express.Router();
 var jwt = require("jsonwebtoken");
 var Review = require("../models/Review");
 var Order = require("../models/Order");
+var sendServerError = require("../utils/errorResponse");
 
 function authMiddleware(req, res, next) {
   var token = req.headers.authorization && req.headers.authorization.split(" ")[1];
@@ -69,7 +70,7 @@ router.post("/", authMiddleware, async function(req, res) {
     await review.save();
     res.status(201).json({ message: "Thanks! Your review will appear once it's been checked.", review: review });
   } catch(err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -80,7 +81,7 @@ router.get("/my", authMiddleware, async function(req, res) {
     var reviews = await Review.find({ user: req.user.id }).lean();
     res.json(reviews);
   } catch(err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -91,7 +92,7 @@ router.get("/product/:name", async function(req, res) {
     var reviews = await Review.find({ productName: req.params.name, approved: true }).sort({ createdAt: -1 }).lean();
     res.json(reviews);
   } catch(err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -110,7 +111,7 @@ router.get("/summary", async function(req, res) {
     });
     res.json(result);
   } catch(err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -123,7 +124,7 @@ router.get("/all", authMiddleware, adminOnly, async function(req, res) {
     var reviews = await Review.find(filter).sort({ createdAt: -1 }).lean();
     res.json(reviews);
   } catch(err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -134,7 +135,7 @@ router.patch("/:id/approve", authMiddleware, adminOnly, async function(req, res)
     if (!review) return res.status(404).json({ message: "Review not found" });
     res.json(review);
   } catch(err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -144,7 +145,7 @@ router.delete("/:id", authMiddleware, adminOnly, async function(req, res) {
     await Review.findByIdAndDelete(req.params.id);
     res.json({ message: "Review deleted" });
   } catch(err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 

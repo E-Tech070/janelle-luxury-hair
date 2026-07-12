@@ -3,6 +3,7 @@ var router = express.Router();
 var jwt = require("jsonwebtoken");
 var ChatMessage = require("../models/ChatMessage");
 var User = require("../models/User");
+var sendServerError = require("../utils/errorResponse");
 
 function authMiddleware(req, res, next) {
   var token =
@@ -61,7 +62,7 @@ router.post(
       await msg.save();
       res.status(201).json(msg);
     } catch (err) {
-      res.status(500).json({ message: "Server error", error: err.message });
+      sendServerError(res, err);
     }
   },
 );
@@ -80,7 +81,7 @@ router.get("/my", authMiddleware, async function (req, res) {
       .lean();
     res.json(messages);
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -95,7 +96,7 @@ router.get("/my/unread-count", authMiddleware, async function (req, res) {
     });
     res.json({ count: count });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
@@ -173,7 +174,7 @@ router.get(
 
       res.json(result);
     } catch (err) {
-      res.status(500).json({ message: "Server error", error: err.message });
+      sendServerError(res, err);
     }
   },
 );
@@ -191,7 +192,7 @@ router.get(
       });
       res.json({ count: count });
     } catch (err) {
-      res.status(500).json({ message: "Server error", error: err.message });
+      sendServerError(res, err);
     }
   },
 );
@@ -217,7 +218,7 @@ router.get(
         .lean();
       res.json(messages);
     } catch (err) {
-      res.status(500).json({ message: "Server error", error: err.message });
+      sendServerError(res, err);
     }
   },
 );
@@ -245,7 +246,7 @@ router.post(
       await msg.save();
       res.status(201).json(msg);
     } catch (err) {
-      res.status(500).json({ message: "Server error", error: err.message });
+      sendServerError(res, err);
     }
   },
 );

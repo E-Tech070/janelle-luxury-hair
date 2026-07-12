@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 var Anthropic = require("@anthropic-ai/sdk");
 var Product = require("../models/Product");
+var sendServerError = require("../utils/errorResponse");
 
 var anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -167,7 +168,7 @@ router.post("/chat", async function (req, res) {
     res.json({ reply: reply });
   } catch (err) {
     console.log("❌ AI chat error:", err.message);
-    res.status(500).json({ message: "Server error", error: err.message });
+    sendServerError(res, err);
   }
 });
 
