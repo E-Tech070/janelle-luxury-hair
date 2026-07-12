@@ -3,6 +3,7 @@ var router = express.Router();
 var bcrypt = require("bcryptjs");
 var jwt = require("jsonwebtoken");
 var crypto = require("crypto");
+var rateLimit = require("express-rate-limit");
 var User = require("../models/User");
 var sendPasswordResetEmail = require("../utils/email").sendPasswordResetEmail;
 
@@ -12,8 +13,40 @@ function generateToken(user) {
   });
 }
 
+// ============================================================
+// RATE LIMITING — protects against brute-force password guessing
+// and account-creation spam. Counted per IP (server.js has
+// "trust proxy" set so this sees the real visitor IP behind Render).
+// ============================================================
+
+// Login/register: a real customer mistyping their password a few
+// times should never get blocked, but dozens of attempts in a few
+// minutes is a brute-force attempt, not a typo.
+var authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: "Too many attempts. Please wait a few minutes and try again.",
+  },
+});
+
+// Password reset requests are rare for a legitimate user — a tighter
+// limit here mainly stops someone using the form to spam an inbox
+// with reset emails, or hammering the reset-token endpoint.
+var resetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: "Too many password reset attempts. Please try again in an hour.",
+  },
+});
+
 // REGISTER
-router.post("/register", async function (req, res) {
+router.post("/register", authLimiter, async function (req, res) {
   try {
     var { name, email, phone, password } = req.body;
     if (!name || !email || !password)
@@ -45,7 +78,7 @@ router.post("/register", async function (req, res) {
 });
 
 // LOGIN
-router.post("/login", async function (req, res) {
+router.post("/login", authLimiter, async function (req, res) {
   try {
     var { email, password } = req.body;
     if (!email || !password)
@@ -94,7 +127,7 @@ router.get("/me", async function (req, res) {
 // "email not found" instead, anyone could use this form to check
 // which emails have an account here — that's a real privacy leak
 // for a store with real customers, so we deliberately don't reveal it.
-router.post("/forgot-password", async function (req, res) {
+router.post("/forgot-password", resetLimiter, async function (req, res) {
   try {
     var email = req.body.email;
     if (!email) return res.status(400).json({ message: "Email is required" });
@@ -137,7 +170,7 @@ router.post("/forgot-password", async function (req, res) {
 });
 
 // RESET PASSWORD
-router.post("/reset-password", async function (req, res) {
+router.post("/reset-password", resetLimiter, async function (req, res) {
   try {
     var token = req.body.token;
     var password = req.body.password;
