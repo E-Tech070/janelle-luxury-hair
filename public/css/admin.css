@@ -168,9 +168,18 @@
   cursor: pointer;
   transition: all 0.2s;
 }
-.admin-page-btn:hover:not(:disabled) { border-color: #c9a84c; background: rgba(201,168,76,0.08); }
-.admin-page-btn:disabled { color: #444; cursor: not-allowed; }
-.admin-page-status { color: #888; font-size: 0.78rem; }
+.admin-page-btn:hover:not(:disabled) {
+  border-color: #c9a84c;
+  background: rgba(201, 168, 76, 0.08);
+}
+.admin-page-btn:disabled {
+  color: #444;
+  cursor: not-allowed;
+}
+.admin-page-status {
+  color: #888;
+  font-size: 0.78rem;
+}
 .admin-order-card {
   background: #161616;
   border: 1px solid #2a2a2a;
@@ -1074,5 +1083,98 @@ body.admin-page {
   .admin-nav-btn {
     font-size: 0.78rem;
     padding: 0.7rem 0.5rem;
+  }
+}
+
+/* ============================================================
+   DASHBOARD / STATS TAB
+   ============================================================ */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.stat-card {
+  background: #161616;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 1.25rem;
+}
+.stat-card-label {
+  color: #888;
+  font-size: 0.78rem;
+  margin-bottom: 0.5rem;
+}
+.stat-card-value {
+  color: #c9a84c;
+  font-family: "Playfair Display", serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.stat-card-sub {
+  color: #666;
+  font-size: 0.7rem;
+  margin-top: 0.3rem;
+}
+
+.stat-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.stat-panel {
+  background: #161616;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 1.25rem;
+}
+.stat-panel h3 {
+  color: #fff;
+  font-family: "Playfair Display", serif;
+  font-size: 1rem;
+  margin: 0 0 1rem;
+}
+.stat-status-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #222;
+  color: #ccc;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+}
+.stat-status-row:last-child {
+  border-bottom: none;
+}
+
+.stat-bar-row {
+  margin-bottom: 0.9rem;
+}
+.stat-bar-label {
+  display: flex;
+  justify-content: space-between;
+  color: #ccc;
+  font-size: 0.8rem;
+  margin-bottom: 0.35rem;
+}
+.stat-bar-label span {
+  color: #888;
+}
+.stat-bar-track {
+  background: #222;
+  border-radius: 100px;
+  height: 8px;
+  overflow: hidden;
+}
+.stat-bar-fill {
+  background: #c9a84c;
+  height: 100%;
+  border-radius: 100px;
+}
+
+@media (max-width: 768px) {
+  .stat-panels {
+    grid-template-columns: 1fr;
   }
 }

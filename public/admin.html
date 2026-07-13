@@ -32,7 +32,9 @@
     <main class="admin-main">
       <aside class="admin-sidebar">
         <nav>
-          <button class="admin-nav-btn active" data-tab="orders">
+          <button class="admin-nav-btn" data-tab="dashboard">
+            <i class="bi bi-graph-up"></i> Dashboard</button
+          ><button class="admin-nav-btn active" data-tab="orders">
             <i class="bi bi-bag-check"></i> Orders</button
           ><button class="admin-nav-btn" data-tab="chat">
             <i class="bi bi-chat-dots"></i> Chat
@@ -47,6 +49,16 @@
         </nav>
       </aside>
       <div class="admin-content">
+        <div id="admin-tab-dashboard" class="admin-tab">
+          <div class="admin-tab-header">
+            <h2>Dashboard</h2>
+          </div>
+          <div id="admin-stats-content">
+            <div class="loading-state">
+              <span class="spinner"></span> Loading stats...
+            </div>
+          </div>
+        </div>
         <div id="admin-tab-orders" class="admin-tab active">
           <div class="admin-tab-header">
             <h2>All Orders</h2>

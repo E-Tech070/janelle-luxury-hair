@@ -15,24 +15,26 @@ app.set("trust proxy", 1);
 app.use(cors());
 app.use(compression());
 app.use(express.json({ limit: "6mb" }));
-app.use(express.static(path.join(__dirname, "../public"), {
-  maxAge: "1d",
-  setHeaders: function(res, filePath) {
-    // CSS and JS change often while we're actively building this site.
-    // "no-cache" doesn't mean "never cache" — it means the browser must
-    // check back with the server before reusing its cached copy, so
-    // fixes show up immediately instead of being stuck for up to a day.
-    if (filePath.endsWith(".css") || filePath.endsWith(".js")) {
-      res.setHeader("Cache-Control", "no-cache");
-    }
-  }
-}));
+app.use(
+  express.static(path.join(__dirname, "../public"), {
+    maxAge: "1d",
+    setHeaders: function (res, filePath) {
+      // CSS and JS change often while we're actively building this site.
+      // "no-cache" doesn't mean "never cache" — it means the browser must
+      // check back with the server before reusing its cached copy, so
+      // fixes show up immediately instead of being stuck for up to a day.
+      if (filePath.endsWith(".css") || filePath.endsWith(".js")) {
+        res.setHeader("Cache-Control", "no-cache");
+      }
+    },
+  }),
+);
 
 // Lightweight endpoint for an uptime monitor (e.g. UptimeRobot) to
 // ping every 5-10 minutes, so Render's free tier never sees 15
 // minutes of silence and never spins the service down. No database
 // call here on purpose — this should stay fast and cheap to hit.
-app.get("/api/health", function(req, res) {
+app.get("/api/health", function (req, res) {
   res.json({ status: "ok" });
 });
 
@@ -43,6 +45,7 @@ app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/chat", require("./routes/chat"));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/ai", require("./routes/ai"));
+app.use("/api/stats", require("./routes/stats"));
 app.get("/{*splat}", function (req, res) {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });

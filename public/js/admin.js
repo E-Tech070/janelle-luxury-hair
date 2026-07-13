@@ -27,6 +27,7 @@ document.querySelectorAll(".admin-nav-btn").forEach(function (btn) {
     if (btn.dataset.tab === "chat") loadConversations();
     if (btn.dataset.tab === "reviews") loadReviews();
     if (btn.dataset.tab === "products") loadProducts();
+    if (btn.dataset.tab === "dashboard") loadStats();
   });
 });
 
@@ -747,6 +748,92 @@ document
       console.log("Could not save product:", err);
     }
   });
+
+// ============================================================
+// DASHBOARD / STATS
+// ============================================================
+function formatNaira(n) {
+  return "₦" + (n || 0).toLocaleString();
+}
+
+async function loadStats() {
+  var el = document.getElementById("admin-stats-content");
+  el.innerHTML =
+    '<div class="loading-state"><span class="spinner"></span> Loading stats...</div>';
+  try {
+    var res = await fetch(API + "/stats/dashboard", {
+      headers: { Authorization: "Bearer " + token },
+    });
+    var s = await res.json();
+
+    var statusLabels = {
+      awaiting_payment: "Awaiting Payment",
+      pending: "Pending",
+      confirmed: "Confirmed",
+      processing: "Processing",
+      shipped: "Shipped",
+      delivered: "Delivered",
+      cancelled: "Cancelled",
+    };
+    var statusHtml = "";
+    Object.keys(statusLabels).forEach(function (key) {
+      var count = s.statusBreakdown[key] || 0;
+      if (count > 0)
+        statusHtml +=
+          '<div class="stat-status-row"><span>' +
+          statusLabels[key] +
+          "</span><span>" +
+          count +
+          "</span></div>";
+    });
+
+    var topProductsHtml = "";
+    if (s.topProducts.length) {
+      var maxQty = s.topProducts[0].qty;
+      s.topProducts.forEach(function (p) {
+        var pct = Math.round((p.qty / maxQty) * 100);
+        topProductsHtml +=
+          '<div class="stat-bar-row"><div class="stat-bar-label">' +
+          p.name +
+          " <span>" +
+          p.qty +
+          ' sold</span></div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:' +
+          pct +
+          '%"></div></div></div>';
+      });
+    } else {
+      topProductsHtml = '<p class="admin-empty">No sales yet.</p>';
+    }
+
+    el.innerHTML =
+      '<div class="stat-cards">' +
+      '<div class="stat-card"><div class="stat-card-label">💰 Total Revenue</div><div class="stat-card-value">' +
+      formatNaira(s.totalRevenue) +
+      '</div><div class="stat-card-sub">From confirmed payments</div></div>' +
+      '<div class="stat-card"><div class="stat-card-label">📅 This Month</div><div class="stat-card-value">' +
+      formatNaira(s.monthRevenue) +
+      '</div><div class="stat-card-sub">' +
+      s.monthOrders +
+      " confirmed orders</div></div>" +
+      '<div class="stat-card"><div class="stat-card-label">🧾 Avg Order Value</div><div class="stat-card-value">' +
+      formatNaira(s.avgOrderValue) +
+      "</div></div>" +
+      '<div class="stat-card"><div class="stat-card-label">👥 Customers</div><div class="stat-card-value">' +
+      s.totalCustomers +
+      "</div></div>" +
+      "</div>" +
+      '<div class="stat-panels">' +
+      '<div class="stat-panel"><h3>Orders by Status</h3>' +
+      (statusHtml || '<p class="admin-empty">No orders yet.</p>') +
+      "</div>" +
+      '<div class="stat-panel"><h3>🏆 Best Sellers</h3>' +
+      topProductsHtml +
+      "</div>" +
+      "</div>";
+  } catch (err) {
+    el.innerHTML = '<p class="admin-empty">Could not load stats.</p>';
+  }
+}
 
 // ============================================================
 // INIT
