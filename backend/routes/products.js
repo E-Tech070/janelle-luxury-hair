@@ -67,7 +67,9 @@ router.post(
 // GET ALL PRODUCTS (public — used by the storefront)
 router.get("/", async function (req, res) {
   try {
-    var products = await Product.find({ active: true }).sort({ createdAt: -1 }).lean();
+    var products = await Product.find({ active: true })
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(products);
   } catch (err) {
     sendServerError(res, err);
@@ -95,6 +97,31 @@ router.get("/:id", async function (req, res) {
   }
 });
 
+// Serves the product photo as a real image, decoded from the base64
+// stored on the product. This exists specifically so link previews
+// (WhatsApp, Facebook, etc.) have an actual image URL to fetch —
+// those platforms can't render a base64 string as a preview photo.
+router.get("/:id/image", async function (req, res) {
+  try {
+    var product = await Product.findOne({ id: req.params.id })
+      .select("img")
+      .lean();
+    if (!product || !product.img || product.img.indexOf("data:") !== 0) {
+      return res.status(404).send("Image not found");
+    }
+    // A stored value looks like "data:image/jpeg;base64,<data>" —
+    // split it into its mime type and the actual image bytes.
+    var match = product.img.match(/^data:(image\/[a-zA-Z]+);base64,(.+)$/);
+    if (!match) return res.status(404).send("Image not found");
+    var buffer = Buffer.from(match[2], "base64");
+    res.set("Content-Type", match[1]);
+    res.set("Cache-Control", "public, max-age=86400"); // product photos rarely change day-to-day
+    res.send(buffer);
+  } catch (err) {
+    sendServerError(res, err);
+  }
+});
+
 // CREATE PRODUCT (admin)
 router.post("/", authMiddleware, adminOnly, async function (req, res) {
   try {
@@ -111,10 +138,17 @@ router.post("/", authMiddleware, adminOnly, async function (req, res) {
       });
     }
     if (typeof body.numericPrice !== "number" || body.numericPrice <= 0) {
-      return res.status(400).json({ message: "Price must be a positive number" });
+      return res
+        .status(400)
+        .json({ message: "Price must be a positive number" });
     }
-    if (body.stock !== undefined && (!Number.isInteger(body.stock) || body.stock < 0)) {
-      return res.status(400).json({ message: "Stock must be a whole number, 0 or more" });
+    if (
+      body.stock !== undefined &&
+      (!Number.isInteger(body.stock) || body.stock < 0)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Stock must be a whole number, 0 or more" });
     }
     var existing = await Product.findOne({ id: body.id });
     if (existing)
@@ -147,11 +181,21 @@ router.post("/", authMiddleware, adminOnly, async function (req, res) {
 router.put("/:id", authMiddleware, adminOnly, async function (req, res) {
   try {
     var body = req.body;
-    if (body.numericPrice !== undefined && (typeof body.numericPrice !== "number" || body.numericPrice <= 0)) {
-      return res.status(400).json({ message: "Price must be a positive number" });
+    if (
+      body.numericPrice !== undefined &&
+      (typeof body.numericPrice !== "number" || body.numericPrice <= 0)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Price must be a positive number" });
     }
-    if (body.stock !== undefined && (!Number.isInteger(body.stock) || body.stock < 0)) {
-      return res.status(400).json({ message: "Stock must be a whole number, 0 or more" });
+    if (
+      body.stock !== undefined &&
+      (!Number.isInteger(body.stock) || body.stock < 0)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Stock must be a whole number, 0 or more" });
     }
     var update = {};
     [
