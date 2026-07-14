@@ -1074,15 +1074,15 @@ body.admin-page {
     width: 100%;
     justify-content: center;
   }
-  /* 4 nav buttons in one row never fit on a phone — use a 2x2 grid instead */
+  /* 5 nav buttons in one row never fit on a phone — grid instead */
   .admin-sidebar nav {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 0.5rem;
   }
   .admin-nav-btn {
-    font-size: 0.78rem;
-    padding: 0.7rem 0.5rem;
+    font-size: 0.72rem;
+    padding: 0.65rem 0.4rem;
   }
 }
 

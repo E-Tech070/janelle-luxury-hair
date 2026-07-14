@@ -274,10 +274,15 @@ document.addEventListener("DOMContentLoaded", function () {
   // filters once they're actually in the DOM, in case the shopper
   // already typed a search or picked a filter before the fetch
   // finished — otherwise the freshly-added cards would ignore
-  // whatever was already selected.
+  // whatever was already selected. This only needs to catch that ONE
+  // initial load: applyFilters() itself reorders cards via
+  // appendChild() when sorting, which would otherwise re-trigger this
+  // same observer and loop forever, so we disconnect right after the
+  // first real mutation instead of leaving it running indefinitely.
   var shopGridEl = document.getElementById("shopGrid");
   if (shopGridEl) {
     var gridObserver = new MutationObserver(function () {
+      gridObserver.disconnect();
       applyFilters(true);
     });
     gridObserver.observe(shopGridEl, { childList: true });
