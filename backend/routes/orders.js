@@ -3,8 +3,16 @@ var router = express.Router();
 var jwt = require("jsonwebtoken");
 var Order = require("../models/Order");
 var Product = require("../models/Product");
-var sendOrderConfirmationEmail = require("../utils/email").sendOrderConfirmationEmail;
+var emailUtils = require("../utils/email");
+var sendOrderConfirmationEmail = emailUtils.sendOrderConfirmationEmail;
+var sendNewOrderAlertEmail = emailUtils.sendNewOrderAlertEmail;
+var sendLowStockAlertEmail = emailUtils.sendLowStockAlertEmail;
 var sendServerError = require("../utils/errorResponse");
+
+// Matches the "Only X left" threshold already shown to shoppers on
+// the shop grid and product page, so the admin gets alerted at the
+// same point a customer would start seeing the low-stock warning.
+var LOW_STOCK_THRESHOLD = 5;
 
 function authMiddleware(req, res, next) {
   var token =
@@ -40,11 +48,15 @@ function adminOnly(req, res, next) {
 // ============================================================
 async function reserveStock(items) {
   var reserved = [];
+  var lowStockProducts = [];
   for (var i = 0; i < items.length; i++) {
     var item = items[i];
     var productId = item.productId || item.id;
     if (!productId) continue;
 
+    // findOneAndUpdate returns the document as it was BEFORE this
+    // update by default, so "updated.stock" here is the pre-order
+    // count — subtracting qty gives us the real count after.
     var updated = await Product.findOneAndUpdate(
       { id: productId, stock: { $gte: item.qty } },
       { $inc: { stock: -item.qty } }
@@ -55,8 +67,20 @@ async function reserveStock(items) {
       return { ok: false, message: "Sorry, \"" + item.name + "\" doesn't have enough stock left. Please update your cart and try again." };
     }
     reserved.push({ productId: productId, qty: item.qty });
+
+    // Alert on two distinct moments: first time it crosses INTO low
+    // stock, and separately, first time it hits exactly zero — those
+    // are both worth knowing about even if the item was already low
+    // from an earlier order (selling out completely is more urgent
+    // than "still has a couple left").
+    var stockAfter = updated.stock - item.qty;
+    var crossesLow = updated.stock > LOW_STOCK_THRESHOLD && stockAfter <= LOW_STOCK_THRESHOLD;
+    var crossesZero = updated.stock > 0 && stockAfter === 0;
+    if (crossesLow || crossesZero) {
+      lowStockProducts.push({ name: updated.name, stock: stockAfter });
+    }
   }
-  return { ok: true };
+  return { ok: true, lowStockProducts: lowStockProducts };
 }
 
 async function releaseStock(reserved) {
@@ -165,10 +189,14 @@ router.post("/", authMiddleware, async function (req, res) {
       throw saveErr;
     }
 
-    // sendOrderConfirmationEmail() never throws on its own — if
-    // Resend is down or misconfigured it just logs and moves on, so
-    // this can never cause the order itself to fail to save.
+    // Both of these never throw on their own (same rule as the
+    // customer confirmation email above) — a notification failing
+    // to send can never cause the order itself to fail.
     await sendOrderConfirmationEmail(order);
+    await sendNewOrderAlertEmail(order);
+    for (var j = 0; j < stockResult.lowStockProducts.length; j++) {
+      await sendLowStockAlertEmail(stockResult.lowStockProducts[j]);
+    }
 
     res.status(201).json(order);
   } catch (err) {

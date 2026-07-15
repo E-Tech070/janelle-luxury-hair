@@ -140,7 +140,108 @@ function buildPasswordResetEmailHtml(user, resetLink) {
   );
 }
 
+// Sends you (the admin) a heads-up the moment a new order comes in,
+// so you don't have to keep checking the dashboard to know a sale
+// happened. Same "never throws" rule — a notification failing to
+// send should never be able to break the order itself.
+async function sendNewOrderAlertEmail(order) {
+  var resend = getResendClient();
+  var adminEmail = process.env.ADMIN_EMAIL;
+  if (!resend || !adminEmail) {
+    console.log(
+      "⚠️  RESEND_API_KEY or ADMIN_EMAIL not set — skipping new order alert.",
+    );
+    return;
+  }
+  try {
+    var itemsHtml = "";
+    order.items.forEach(function (item) {
+      itemsHtml +=
+        "<li>" + item.name + " x" + item.qty + " — " + item.price + "</li>";
+    });
+    var html =
+      '<div style="background:#0d0d0d;padding:2rem;font-family:sans-serif;">' +
+      '<div style="max-width:480px;margin:0 auto;background:#161616;border:1px solid #2a2a2a;border-radius:12px;padding:2rem;color:#e8e8e8;">' +
+      '<h2 style="color:#c9a84c;margin-top:0;">🛍️ New Order Received</h2>' +
+      "<p><strong>" +
+      order.userName +
+      "</strong> (" +
+      order.userEmail +
+      (order.userPhone ? ", " + order.userPhone : "") +
+      ")</p>" +
+      '<ul style="padding-left:1.2rem;">' +
+      itemsHtml +
+      "</ul>" +
+      '<div style="border-top:1px solid #2a2a2a;padding-top:1rem;font-weight:bold;color:#c9a84c;">Total: ' +
+      formatMoney(order.total) +
+      "</div>" +
+      '<p style="margin-top:1rem;font-size:14px;color:#ccc;">Payment status: ' +
+      order.paymentStatus.replace(/_/g, " ") +
+      "</p>" +
+      '<p style="margin-top:1.5rem;font-size:13px;color:#666;">Log in to the admin dashboard to review and confirm this order.</p>' +
+      "</div>" +
+      "</div>";
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: adminEmail,
+      subject:
+        "🛍️ New order from " +
+        order.userName +
+        " — " +
+        formatMoney(order.total),
+      html: html,
+    });
+    console.log("✅ New order alert sent to admin");
+  } catch (err) {
+    console.log("❌ Could not send new order alert:", err.message);
+  }
+}
+
+// Sends you an alert the first time a product's stock drops to or
+// below the low-stock threshold, so you know to restock before it
+// actually sells out and disappoints a customer.
+async function sendLowStockAlertEmail(product) {
+  var resend = getResendClient();
+  var adminEmail = process.env.ADMIN_EMAIL;
+  if (!resend || !adminEmail) {
+    console.log(
+      "⚠️  RESEND_API_KEY or ADMIN_EMAIL not set — skipping low stock alert.",
+    );
+    return;
+  }
+  try {
+    var stockLine =
+      product.stock === 0
+        ? "😔 This item just sold out completely (0 left)."
+        : "⚠️ Only " + product.stock + " left in stock.";
+    var html =
+      '<div style="background:#0d0d0d;padding:2rem;font-family:sans-serif;">' +
+      '<div style="max-width:480px;margin:0 auto;background:#161616;border:1px solid #2a2a2a;border-radius:12px;padding:2rem;color:#e8e8e8;">' +
+      '<h2 style="color:#c9a84c;margin-top:0;">📦 Low Stock Alert</h2>' +
+      "<p><strong>" +
+      product.name +
+      "</strong></p>" +
+      '<p style="color:#ccc;">' +
+      stockLine +
+      "</p>" +
+      '<p style="margin-top:1.5rem;font-size:13px;color:#666;">Restock this item soon to avoid missing sales.</p>' +
+      "</div>" +
+      "</div>";
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: adminEmail,
+      subject: "📦 Low stock: " + product.name,
+      html: html,
+    });
+    console.log("✅ Low stock alert sent for " + product.name);
+  } catch (err) {
+    console.log("❌ Could not send low stock alert:", err.message);
+  }
+}
+
 module.exports = {
   sendOrderConfirmationEmail: sendOrderConfirmationEmail,
   sendPasswordResetEmail: sendPasswordResetEmail,
+  sendNewOrderAlertEmail: sendNewOrderAlertEmail,
+  sendLowStockAlertEmail: sendLowStockAlertEmail,
 };
