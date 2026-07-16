@@ -75,6 +75,12 @@ function buildOrderEmailHtml(order) {
 // sending fails for any reason (bad API key, Resend is down,
 // no internet), it just logs the error. An order should never
 // fail to save just because the confirmation email couldn't send.
+//
+// IMPORTANT: the Resend SDK does NOT throw on API-level rejections
+// (e.g. sending to a restricted address) — it returns { data, error }
+// and resolves normally either way. A plain try/catch alone would
+// have silently reported success on a rejected send, so every
+// function below explicitly checks the returned error.
 async function sendOrderConfirmationEmail(order) {
   var resend = getResendClient();
   if (!resend) {
@@ -84,12 +90,19 @@ async function sendOrderConfirmationEmail(order) {
     return;
   }
   try {
-    await resend.emails.send({
+    var result = await resend.emails.send({
       from: FROM_EMAIL,
       to: order.userEmail,
       subject: "Your Janelle Luxury Hairs order is confirmed 💛",
       html: buildOrderEmailHtml(order),
     });
+    if (result.error) {
+      console.log(
+        "❌ Order confirmation email rejected by Resend:",
+        result.error.message,
+      );
+      return;
+    }
     console.log("✅ Order confirmation email sent to " + order.userEmail);
   } catch (err) {
     console.log("❌ Could not send order confirmation email:", err.message);
@@ -107,12 +120,19 @@ async function sendPasswordResetEmail(user, resetLink) {
     return false;
   }
   try {
-    await resend.emails.send({
+    var result = await resend.emails.send({
       from: FROM_EMAIL,
       to: user.email,
       subject: "Reset your Janelle Luxury Hairs password",
       html: buildPasswordResetEmailHtml(user, resetLink),
     });
+    if (result.error) {
+      console.log(
+        "❌ Password reset email rejected by Resend:",
+        result.error.message,
+      );
+      return false;
+    }
     console.log("✅ Password reset email sent to " + user.email);
     return true;
   } catch (err) {
@@ -181,7 +201,7 @@ async function sendNewOrderAlertEmail(order) {
       '<p style="margin-top:1.5rem;font-size:13px;color:#666;">Log in to the admin dashboard to review and confirm this order.</p>' +
       "</div>" +
       "</div>";
-    await resend.emails.send({
+    var result = await resend.emails.send({
       from: FROM_EMAIL,
       to: adminEmail,
       subject:
@@ -191,6 +211,13 @@ async function sendNewOrderAlertEmail(order) {
         formatMoney(order.total),
       html: html,
     });
+    if (result.error) {
+      console.log(
+        "❌ New order alert rejected by Resend:",
+        result.error.message,
+      );
+      return;
+    }
     console.log("✅ New order alert sent to admin");
   } catch (err) {
     console.log("❌ Could not send new order alert:", err.message);
@@ -227,12 +254,19 @@ async function sendLowStockAlertEmail(product) {
       '<p style="margin-top:1.5rem;font-size:13px;color:#666;">Restock this item soon to avoid missing sales.</p>' +
       "</div>" +
       "</div>";
-    await resend.emails.send({
+    var result = await resend.emails.send({
       from: FROM_EMAIL,
       to: adminEmail,
       subject: "📦 Low stock: " + product.name,
       html: html,
     });
+    if (result.error) {
+      console.log(
+        "❌ Low stock alert rejected by Resend:",
+        result.error.message,
+      );
+      return;
+    }
     console.log("✅ Low stock alert sent for " + product.name);
   } catch (err) {
     console.log("❌ Could not send low stock alert:", err.message);
